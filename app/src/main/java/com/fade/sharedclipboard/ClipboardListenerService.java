@@ -22,10 +22,15 @@ public class ClipboardListenerService extends Service {
 	ClipboardManager clipboard;
 	ClipboardManager.OnPrimaryClipChangedListener changedListener;
 
+	public final String NOTIFICATION_CHANNEL_ID = "Clipboard.notification";
+	private NotificationManager manager;
+
+
 	@Override
 	public void onCreate() {
 		super.onCreate();
 		clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+		manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
 		changedListener = new ClipboardManager.OnPrimaryClipChangedListener() {
 			@Override
@@ -37,8 +42,7 @@ public class ClipboardListenerService extends Service {
 					ClipData.Item item = clipboard.getPrimaryClip().getItemAt(0);
 
 					Log.i("Clipboard ", item.getText().toString());
-					Toast.makeText(ClipboardListenerService.this,item.getText().toString(),Toast.LENGTH_SHORT).show();
-
+					Toast.makeText(ClipboardListenerService.this, item.getText().toString(), Toast.LENGTH_SHORT).show();
 
 
 				}
@@ -47,21 +51,32 @@ public class ClipboardListenerService extends Service {
 
 		if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O)
 			startOreoAboveForeground();
-		else
-			startForeground(1, new Notification());
+		else {
+
+			//TODO: Notifications for lower versions not displayed properly(But working)
+			//		Icon creation
+			NotificationCompat.Builder notificationBuilderLowSdk = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID);
+			Notification notificationLowSdk = notificationBuilderLowSdk
+					.setContentTitle("Clipboard running")
+					.setContentText("Running")
+					.build();
+
+			startForeground(1, notificationLowSdk);
+
+		}
+
 
 	}
 
 
 	@RequiresApi(Build.VERSION_CODES.O)
-	private void startOreoAboveForeground()
-	{
-		String NOTIFICATION_CHANNEL_ID = "Clipboard.notification";
+	private void startOreoAboveForeground() {
+
 		String channelName = "Clipboard Notification";
 		NotificationChannel chan = new NotificationChannel(NOTIFICATION_CHANNEL_ID, channelName, NotificationManager.IMPORTANCE_LOW);
 		chan.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
 
-		NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
 		assert manager != null;
 		manager.createNotificationChannel(chan);
 
@@ -94,7 +109,6 @@ public class ClipboardListenerService extends Service {
 
 		sendBroadcast(broadcastIntent);
 	}
-
 
 
 	@Override
