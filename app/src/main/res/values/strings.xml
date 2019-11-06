@@ -5,4 +5,6 @@
     <string name="email">E-mail</string>
     <string name="password">Password</string>
     <string name="app_icon">App Icon</string>
+    <string name="push_pin_icon">Push Pin Icon</string>
+    <string name="pinned_clips">Pinned Clips</string>
 </resources>
