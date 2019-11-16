@@ -13,6 +13,7 @@
         android:layout_marginTop="80dp"
         android:onClick="signInClicked"
         android:text="@string/sign_in"
+        android:background="@android:drawable/editbox_background"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.193"
         app:layout_constraintStart_toStartOf="parent"
@@ -25,6 +26,7 @@
         android:layout_marginTop="80dp"
         android:onClick="signUpClicked"
         android:text="@string/sign_up"
+        android:background="@android:drawable/editbox_background"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/signIn"
         app:layout_constraintTop_toBottomOf="@+id/passwordText" />
@@ -54,11 +56,11 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/imageView"
+        app:layout_constraintTop_toBottomOf="@+id/pushPinImage"
         android:autofillHints="" />
 
     <ImageView
-        android:id="@+id/imageView"
+        android:id="@+id/pushPinImage"
         android:layout_width="60dp"
         android:layout_height="60dp"
         android:layout_marginTop="68dp"

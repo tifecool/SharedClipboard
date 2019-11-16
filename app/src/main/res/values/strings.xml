@@ -7,4 +7,8 @@
     <string name="app_icon">App Icon</string>
     <string name="push_pin_icon">Push Pin Icon</string>
     <string name="pinned_clips">Pinned Clips</string>
+    <string name="clipboard_text">Current Clipboard Text…</string>
+    <string name="save" formatted="true">&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;SAVE</string>
+    <string name="shared_clipboard">Shared Clipboard</string>
+    <string name="share">Share to pc</string>
 </resources>

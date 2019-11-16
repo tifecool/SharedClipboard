@@ -7,7 +7,6 @@
     android:layout_height="match_parent"
     android:id="@+id/drawer_layout"
     android:fitsSystemWindows="true"
-    tools:openDrawer="start"
     tools:context=".MainActivity">
 
     <LinearLayout
@@ -15,29 +14,117 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <androidx.appcompat.widget.Toolbar
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:gravity="bottom"
+        android:theme="@style/AppTheme"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/shared_clipboard"
+            android:layout_marginStart="16dp"
+            android:textStyle="italic"
+            android:textSize="40sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <View
+            android:id="@+id/divider"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:background="@color/colorPrimary"
-            android:id="@+id/toolbar"
-            android:theme="@style/AppTheme"
-            app:popupTheme="@style/AppTheme"
-            android:elevation="4dp"/>
+            android:layout_height="1dp"
+            android:layout_marginTop="16dp"
+            android:background="#575757"
+            app:layout_constraintTop_toTopOf="parent"/>
+
+    </LinearLayout>
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-            <TextView
+
+            <Button
+                android:id="@+id/button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Test Text"
-                android:textSize="40sp"
+                android:layout_marginTop="16dp"
+                android:background="@android:drawable/editbox_background"
+                android:text="@string/share"
+                app:layout_constraintLeft_toLeftOf="@id/editbox"
+                app:layout_constraintTop_toBottomOf="@id/editbox" />
+
+            <Button
+                android:id="@+id/saveButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:background="@android:drawable/editbox_background"
+                android:onClick="saveButtonClicked"
+                android:text="@string/save"
+                app:layout_constraintLeft_toRightOf="@id/button"
+                app:layout_constraintTop_toTopOf="@id/button" />
+
+            <EditText
+                android:id="@+id/editbox"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginStart="32dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginEnd="32dp"
+                android:layout_marginBottom="80dp"
+                android:background="@android:drawable/editbox_background"
+                android:gravity="start"
+                android:hint="@string/clipboard_text"
+                android:inputType="text" />
+
+            <ImageView
+                android:contentDescription=""
+                android:id="@+id/indicator1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_keyboard_arrow_right_black_24dp"
+                app:layout_constraintBottom_toBottomOf="@id/editbox"
+                app:layout_constraintEnd_toStartOf="@id/editbox"
+                app:layout_constraintHorizontal_bias="0.5"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="@id/editbox"
+                app:layout_constraintVertical_bias="0.45"/>
+
+            <ImageView
+                android:id="@+id/indicator2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="15dp"
+                android:src="@drawable/ic_keyboard_arrow_right_black_24dp"
+                app:layout_constraintBottom_toBottomOf="@id/editbox"
+                app:layout_constraintEnd_toStartOf="@id/editbox"
+                app:layout_constraintHorizontal_bias="0.5"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@id/editbox"
+                app:layout_constraintVertical_bias="0.45" />
+
+            <ImageView
+                android:id="@+id/pushPinImage"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_marginLeft="2dp"
+                android:layout_marginTop="2dp"
+                android:layout_marginRight="2dp"
+                android:layout_marginBottom="2dp"
+                android:elevation="20dp"
+                android:scaleType="fitStart"
+                app:layout_constraintBottom_toBottomOf="@id/saveButton"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintLeft_toLeftOf="@id/saveButton"
+                app:layout_constraintRight_toRightOf="@id/saveButton"
+                app:layout_constraintTop_toTopOf="@id/saveButton"
+                app:layout_constraintVertical_bias="0.53"
+                app:srcCompat="@drawable/push_pin_icon" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
-
     </LinearLayout>
 
     <com.google.android.material.navigation.NavigationView
@@ -61,7 +148,6 @@
         </LinearLayout>
 
     </com.google.android.material.navigation.NavigationView>
-
 
 
 </androidx.drawerlayout.widget.DrawerLayout>
