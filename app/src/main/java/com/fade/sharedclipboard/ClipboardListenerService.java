@@ -43,6 +43,7 @@ public class ClipboardListenerService extends Service {
 
 					Log.i("Clipboard ", item.getText().toString());
 					Toast.makeText(ClipboardListenerService.this, item.getText().toString(), Toast.LENGTH_SHORT).show();
+					setCurrentClip(item.getText().toString());
 
 
 				}
@@ -111,8 +112,19 @@ public class ClipboardListenerService extends Service {
 	}
 
 
+
 	@Override
 	public IBinder onBind(Intent intent) {
 		return null;
+	}
+
+	private static String currentClip;
+
+	public void setCurrentClip(String clip){
+		currentClip = clip;
+	}
+
+	public String getCurrentClip(){
+		return currentClip;
 	}
 }

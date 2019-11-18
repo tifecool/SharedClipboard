@@ -11,4 +11,7 @@
     <string name="save" formatted="true">&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;SAVE</string>
     <string name="shared_clipboard">Shared Clipboard</string>
     <string name="share">Share to pc</string>
+    <string name="indicator">Indicator</string>
+    <string name="saved">SAVED!</string>
+    <string name="empty_editbox">No Content To Save</string>
 </resources>

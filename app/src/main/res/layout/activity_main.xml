@@ -78,14 +78,19 @@
                 android:background="@android:drawable/editbox_background"
                 android:gravity="start"
                 android:hint="@string/clipboard_text"
-                android:inputType="text" />
+                android:inputType="textMultiLine"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
             <ImageView
-                android:contentDescription=""
+                android:contentDescription="@string/indicator"
+                android:onClick="indicatorClicked"
                 android:id="@+id/indicator1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@drawable/ic_keyboard_arrow_right_black_24dp"
+                android:src="@drawable/right_arrow_24dp"
                 app:layout_constraintBottom_toBottomOf="@id/editbox"
                 app:layout_constraintEnd_toStartOf="@id/editbox"
                 app:layout_constraintHorizontal_bias="0.5"
@@ -94,11 +99,13 @@
                 app:layout_constraintVertical_bias="0.45"/>
 
             <ImageView
+                android:contentDescription="@string/indicator"
+                android:onClick="indicatorClicked"
                 android:id="@+id/indicator2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="15dp"
-                android:src="@drawable/ic_keyboard_arrow_right_black_24dp"
+                android:src="@drawable/right_arrow_24dp"
                 app:layout_constraintBottom_toBottomOf="@id/editbox"
                 app:layout_constraintEnd_toStartOf="@id/editbox"
                 app:layout_constraintHorizontal_bias="0.5"
@@ -107,6 +114,7 @@
                 app:layout_constraintVertical_bias="0.45" />
 
             <ImageView
+                android:contentDescription="@string/push_pin_icon"
                 android:id="@+id/pushPinImage"
                 android:layout_width="0dp"
                 android:layout_height="0dp"
