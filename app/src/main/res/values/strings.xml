@@ -14,4 +14,5 @@
     <string name="indicator">Indicator</string>
     <string name="saved">SAVED!</string>
     <string name="empty_editbox">No Content To Save</string>
+    <string name="reading_storage">Error Occurred In Reading Storage</string>
 </resources>

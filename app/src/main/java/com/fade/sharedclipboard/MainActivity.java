@@ -7,6 +7,10 @@ import android.content.ClipDescription;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteStatement;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.util.Log;
@@ -32,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
 			 Multi select when long pressed
 			 UPDATE APP SCREEN INCASE OF ANY ISSUES AND UPDATE NEEDED!
 	 */
-
+	public static final String LAST_INT = "lastInt";
 
 	private ImageView indicator2;
 	private ImageView indicator1;
@@ -41,11 +45,14 @@ public class MainActivity extends AppCompatActivity {
 	private ClipboardListenerService clipboardListenerObj = new ClipboardListenerService();
 	private ClipboardManager clipboard;
 	private Button button;
+	private ArrayList<Integer> savedClipID = new ArrayList<>();
 	private ArrayList<String> savedClipTitles = new ArrayList<>();
 	private ArrayList<String> savedClipContents = new ArrayList<>();
 	private ArrayAdapter<String> savedClipTitleAdapter;
 	private DrawerLayout drawerLayout;
-
+	private SQLiteDatabase database;
+	// TODO: SharedPrefrence is used to store last int as ID for savedclip content
+	private SharedPreferences lastIntUsed;
 
 	private CountDownTimer countDownTimer = new CountDownTimer(2000, 2000) {
 
@@ -62,10 +69,42 @@ public class MainActivity extends AppCompatActivity {
 	};
 
 
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+
+		//Database Initialization and creation
+		database = this.openOrCreateDatabase("SAVED CLIPS", MODE_PRIVATE,null);
+		lastIntUsed = this.getSharedPreferences("LastIntUsed",MODE_PRIVATE);
+
+		//database.execSQL("DROP TABLE IF EXISTS SavedClips");
+
+		database.execSQL("CREATE TABLE IF NOT EXISTS SavedClips (id INT PRIMARY KEY, ClipTitle VARCHAR, ClipContent VARCHAR, UnixTimeLastSynced INT, Synced INT)");
+
+		try {
+			Cursor c = database.rawQuery("SELECT * FROM SavedClips", null);
+
+			int clipIDIndex = c.getColumnIndex("id");
+			int clipTitleIndex = c.getColumnIndex("ClipTitle");
+			int clipContentIndex = c.getColumnIndex("ClipContent");
+
+			if(c.moveToFirst()) {
+				do {
+					savedClipID.add(c.getInt(clipIDIndex));
+					savedClipTitles.add(c.getString(clipContentIndex));
+					savedClipContents.add(c.getString(clipTitleIndex));
+
+				} while (c.moveToNext());
+			}
+
+			c.close();
+		}catch (Exception e) {
+			e.printStackTrace();
+			Toast.makeText(MainActivity.this, R.string.reading_storage, Toast.LENGTH_LONG).show();
+		}
+
 
 		clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
 
@@ -155,6 +194,7 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 
+
 	public void saveButtonClicked(View view) {
 		String clipContent = editText.getText().toString();
 
@@ -177,24 +217,38 @@ public class MainActivity extends AppCompatActivity {
 			flickerAnimation1(indicator1);
 			flickerAnimation2(indicator2);
 
+			//Adding of content to SQL
+			SQLiteStatement statement =
+					database.compileStatement("INSERT INTO SavedClips (id,ClipTitle,ClipContent) VALUES (? , ? , ?)");
 
 			//Title Shorten
 			if (clipContent.length() > 125) {
 				String shortTit = clipContent.substring(0, 125);
 				shortTit = shortTit.concat("...");
 				savedClipTitles.add(shortTit);
+				statement.bindString(2,shortTit);
 			} else {
 				savedClipTitles.add(clipContent);
+				statement.bindString(2,clipContent);
 			}
 
-			savedClipContents.add(clipContent);
-			savedClipTitleAdapter.notifyDataSetChanged();
-			Log.i("Lenght of String", "" + clipContent.length());
+			int defaultValue = savedClipID.size() > 0 ? savedClipID.get(savedClipID.size()-1)+1 : 1;
+			int id = lastIntUsed.getInt(LAST_INT, defaultValue);
 
+			savedClipID.add(id);
+			statement.bindLong(1,id);
+
+			lastIntUsed.edit().putInt(LAST_INT, lastIntUsed.getInt(LAST_INT, defaultValue) + 1).apply();
+
+			savedClipContents.add(clipContent);
+
+			statement.bindString(3,clipContent);
+			statement.execute();
+
+			savedClipTitleAdapter.notifyDataSetChanged();
 
 			button.setText(R.string.saved);
 			pushPinImage.setVisibility(View.GONE);
-
 
 			countDownTimer.start();
 		}else{
@@ -282,6 +336,7 @@ public class MainActivity extends AppCompatActivity {
 
 		imageView.animate().alpha(alphaVal2).setDuration(ANIM_DURATION).setListener(listener2);
 	}
+
 
 	public void indicatorClicked(View view) {
 		drawerLayout.openDrawer(GravityCompat.START);
