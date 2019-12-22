@@ -15,6 +15,7 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.util.Log;
 import android.view.View;
+import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -31,8 +32,8 @@ import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
-	/*TODO:  Make SQL Storage of SavedClips
-			 Dialogue box pop up when saved clip clicked
+	/*TODO:
+	   		 Dialogue box pop up when saved clip clicked
 			 Multi select when long pressed
 			 UPDATE APP SCREEN INCASE OF ANY ISSUES AND UPDATE NEEDED!
 	 */
@@ -41,18 +42,21 @@ public class MainActivity extends AppCompatActivity {
 	private ImageView indicator2;
 	private ImageView indicator1;
 	private ImageView pushPinImage;
+	private ImageView syncImage;
 	private EditText editText;
 	private ClipboardListenerService clipboardListenerObj = new ClipboardListenerService();
 	private ClipboardManager clipboard;
 	private Button button;
+	private static ArrayList<Long> unixTime = new ArrayList<>();
+	private static ArrayList<Integer> syncedBoolean = new ArrayList<>();
 	private ArrayList<Integer> savedClipID = new ArrayList<>();
 	private ArrayList<String> savedClipTitles = new ArrayList<>();
 	private ArrayList<String> savedClipContents = new ArrayList<>();
-	private ArrayAdapter<String> savedClipTitleAdapter;
+	private static ArrayAdapter savedClipAdapter;
 	private DrawerLayout drawerLayout;
-	private SQLiteDatabase database;
-	// TODO: SharedPrefrence is used to store last int as ID for savedclip content
+	private static SQLiteDatabase database;
 	private SharedPreferences lastIntUsed;
+	private Utils.UnixTimeDownloader syncRunner;
 
 	private CountDownTimer countDownTimer = new CountDownTimer(2000, 2000) {
 
@@ -69,15 +73,14 @@ public class MainActivity extends AppCompatActivity {
 	};
 
 
-
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
 		//Database Initialization and creation
-		database = this.openOrCreateDatabase("SAVED CLIPS", MODE_PRIVATE,null);
-		lastIntUsed = this.getSharedPreferences("LastIntUsed",MODE_PRIVATE);
+		database = this.openOrCreateDatabase("SAVED CLIPS", MODE_PRIVATE, null);
+		lastIntUsed = this.getSharedPreferences("LastIntUsed", MODE_PRIVATE);
 
 		//database.execSQL("DROP TABLE IF EXISTS SavedClips");
 
@@ -86,21 +89,24 @@ public class MainActivity extends AppCompatActivity {
 		try {
 			Cursor c = database.rawQuery("SELECT * FROM SavedClips", null);
 
+			int unixTimeIndex = c.getColumnIndex("UnixTimeLastSynced");
+			int syncedIndex = c.getColumnIndex("Synced");
 			int clipIDIndex = c.getColumnIndex("id");
 			int clipTitleIndex = c.getColumnIndex("ClipTitle");
 			int clipContentIndex = c.getColumnIndex("ClipContent");
 
-			if(c.moveToFirst()) {
+			if (c.moveToFirst()) {
 				do {
+					syncedBoolean.add(c.getInt(syncedIndex));
+					unixTime.add(c.getLong(unixTimeIndex));
 					savedClipID.add(c.getInt(clipIDIndex));
-					savedClipTitles.add(c.getString(clipContentIndex));
-					savedClipContents.add(c.getString(clipTitleIndex));
-
+					savedClipContents.add(c.getString(clipContentIndex));
+					savedClipTitles.add(c.getString(clipTitleIndex));
 				} while (c.moveToNext());
 			}
 
 			c.close();
-		}catch (Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			Toast.makeText(MainActivity.this, R.string.reading_storage, Toast.LENGTH_LONG).show();
 		}
@@ -123,7 +129,7 @@ public class MainActivity extends AppCompatActivity {
 			}
 		});
 
-
+		syncImage = findViewById(R.id.syncImage);
 		indicator1 = findViewById(R.id.indicator1);
 		indicator2 = findViewById(R.id.indicator2);
 		pushPinImage = findViewById(R.id.pushPinImage);
@@ -146,10 +152,10 @@ public class MainActivity extends AppCompatActivity {
 		ListView navList = findViewById(R.id.navListView);
 
 		//Creates a List adapter, List views use them to set content
-		savedClipTitleAdapter = new CustomListAdapter(this, savedClipTitles);
+		savedClipAdapter = new CustomListAdapter(this, savedClipTitles, syncedBoolean);
 
 		//Sets adapter
-		navList.setAdapter(savedClipTitleAdapter);
+		navList.setAdapter(savedClipAdapter);
 
 		//When an Item is clicked run below
 		navList.setOnItemClickListener(
@@ -194,7 +200,6 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 
-
 	public void saveButtonClicked(View view) {
 		String clipContent = editText.getText().toString();
 
@@ -219,42 +224,82 @@ public class MainActivity extends AppCompatActivity {
 
 			//Adding of content to SQL
 			SQLiteStatement statement =
-					database.compileStatement("INSERT INTO SavedClips (id,ClipTitle,ClipContent) VALUES (? , ? , ?)");
+					database.compileStatement("INSERT INTO SavedClips (id,ClipTitle,ClipContent,UnixTimeLastSynced,Synced) VALUES (? , ? , ?, ?, ?)");
 
 			//Title Shorten
 			if (clipContent.length() > 125) {
 				String shortTit = clipContent.substring(0, 125);
 				shortTit = shortTit.concat("...");
 				savedClipTitles.add(shortTit);
-				statement.bindString(2,shortTit);
+				statement.bindString(2, shortTit);
 			} else {
 				savedClipTitles.add(clipContent);
-				statement.bindString(2,clipContent);
+				statement.bindString(2, clipContent);
 			}
 
-			int defaultValue = savedClipID.size() > 0 ? savedClipID.get(savedClipID.size()-1)+1 : 1;
+			int defaultValue = savedClipID.size() > 0 ? savedClipID.get(savedClipID.size() - 1) + 1 : 1;
 			int id = lastIntUsed.getInt(LAST_INT, defaultValue);
 
 			savedClipID.add(id);
-			statement.bindLong(1,id);
+			statement.bindLong(1, id);
 
 			lastIntUsed.edit().putInt(LAST_INT, lastIntUsed.getInt(LAST_INT, defaultValue) + 1).apply();
 
 			savedClipContents.add(clipContent);
+			statement.bindString(3, clipContent);
 
-			statement.bindString(3,clipContent);
+			unixTime.add((long) 0);
+			statement.bindLong(4, 0);
+			syncedBoolean.add(0);
+			statement.bindLong(5, 0);
+
 			statement.execute();
+			syncRunner = new Utils.UnixTimeDownloader();
+			syncRunner.execute("http://worldtimeapi.org/api/timezone/Etc/UTC");
+			Log.d("SYNCED", "NOt Synced ");
 
-			savedClipTitleAdapter.notifyDataSetChanged();
+			savedClipAdapter.notifyDataSetChanged();
 
 			button.setText(R.string.saved);
 			pushPinImage.setVisibility(View.GONE);
 
 			countDownTimer.start();
-		}else{
-			Toast.makeText(MainActivity.this,R.string.empty_editbox,Toast.LENGTH_SHORT).show();
+		} else {
+			Toast.makeText(MainActivity.this, R.string.empty_editbox, Toast.LENGTH_SHORT).show();
 		}
 
+	}
+
+
+	public static void sync(Long unixTime) {
+		SQLiteStatement statement =
+				database.compileStatement("UPDATE SavedClips SET UnixTimeLastSynced = ?, Synced = 1 WHERE Synced = 0");
+		Log.d("SYNCED", "SYNCED");
+
+
+		while (MainActivity.unixTime.contains((long) 0)) {
+			int i = MainActivity.unixTime.indexOf((long) 0);
+
+			MainActivity.unixTime.add(i, unixTime);
+			MainActivity.unixTime.remove(i + 1);
+
+			syncedBoolean.add(i, 1);
+			syncedBoolean.remove(i + 1);
+
+
+		}
+
+		/*for(int i = MainActivity.unixTime.size() - 1; i >= 0 && MainActivity.unixTime.get(i) == 0; i--){
+			MainActivity.unixTime.add(i,unixTime);
+			MainActivity.unixTime.remove(i+1);
+
+			syncedBoolean.add(i,1);
+			syncedBoolean.remove(i+1);
+		}*/
+
+		statement.bindLong(1, unixTime);
+		statement.execute();
+		savedClipAdapter.notifyDataSetChanged();
 	}
 
 
@@ -342,6 +387,15 @@ public class MainActivity extends AppCompatActivity {
 		drawerLayout.openDrawer(GravityCompat.START);
 	}
 
+	public void syncButtonClicked(View view) {
+
+			syncRunner = new Utils.UnixTimeDownloader();
+
+		if (!unixTime.isEmpty()) {
+			syncRunner.execute("http://worldtimeapi.org/api/timezone/Etc/UTC");
+			syncImage.startAnimation(AnimationUtils.loadAnimation(MainActivity.this,R.anim.rotate));
+		}
+	}
 }
 
 

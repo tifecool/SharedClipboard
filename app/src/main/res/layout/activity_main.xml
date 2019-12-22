@@ -79,6 +79,7 @@
                 android:gravity="start"
                 android:hint="@string/clipboard_text"
                 android:inputType="textMultiLine"
+                android:scrollbars="vertical"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -131,6 +132,25 @@
                 app:layout_constraintTop_toTopOf="@id/saveButton"
                 app:layout_constraintVertical_bias="0.53"
                 app:srcCompat="@drawable/push_pin_icon" />
+
+            <ImageView
+                android:id="@+id/syncImage"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:contentDescription="@string/sync_button"
+                android:onClick="syncButtonClicked"
+                android:src="@drawable/ic_sync_black_24dp"
+                app:layout_constraintBottom_toBottomOf="@+id/pushPinImage"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="@+id/guideline2"
+                app:layout_constraintTop_toTopOf="@+id/pushPinImage" />
+
+            <androidx.constraintlayout.widget.Guideline
+                android:id="@+id/guideline2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                app:layout_constraintGuide_percent="0.6" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </LinearLayout>
