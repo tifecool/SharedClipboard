@@ -2,6 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/bgLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".LoginActivity">
@@ -11,13 +12,12 @@
         android:layout_width="153dp"
         android:layout_height="48dp"
         android:background="@android:drawable/editbox_background"
-        android:onClick="signInClicked"
         android:text="@string/sign_in"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/guideline"
         app:layout_constraintHorizontal_bias="0.8"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/passwordText"
+        app:layout_constraintTop_toBottomOf="@+id/confPassText"
         app:layout_constraintVertical_bias="0.24" />
 
     <Button
@@ -31,17 +31,18 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.2"
         app:layout_constraintStart_toStartOf="@+id/guideline"
-        app:layout_constraintTop_toBottomOf="@+id/passwordText"
+        app:layout_constraintTop_toBottomOf="@+id/confPassText"
         app:layout_constraintVertical_bias="0.24" />
 
     <EditText
         android:id="@+id/passwordText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:autofillHints=""
+        android:autofillHints="password"
         android:ems="10"
         android:hint="@string/password"
         android:inputType="textPassword"
+        android:maxLength="100"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
@@ -50,13 +51,31 @@
         app:layout_constraintVertical_bias="0.1" />
 
     <EditText
-        android:id="@+id/emailText"
+        android:id="@+id/confPassText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:autofillHints=""
         android:ems="10"
+        android:hint="@string/conf_pass"
+        android:inputType="textPassword"
+        android:maxLength="100"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/passwordText"
+        app:layout_constraintVertical_bias="0.07" />
+
+    <EditText
+        android:id="@+id/emailText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:autofillHints="emailAddress"
+        android:ems="10"
         android:hint="@string/email"
         android:inputType="textEmailAddress"
+        android:maxLength="100"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
@@ -77,10 +96,85 @@
         app:layout_constraintVertical_bias="0.18"
         app:srcCompat="@color/colorPrimaryDark" />
 
+    <TextView
+        android:id="@+id/emailReqText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/required"
+        android:textColor="@android:color/holo_red_dark"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="@+id/emailText"
+        app:layout_constraintTop_toBottomOf="@+id/emailText" />
+
+    <TextView
+        android:id="@+id/passReqText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/required"
+        android:textColor="@android:color/holo_red_dark"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="@+id/passwordText"
+        app:layout_constraintTop_toBottomOf="@+id/passwordText" />
+
+    <TextView
+        android:id="@+id/confPassReqText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/conf_req_text"
+        android:textColor="@android:color/holo_red_dark"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="@+id/confPassText"
+        app:layout_constraintTop_toBottomOf="@+id/confPassText" />
+
+    <View
+        android:id="@+id/dividerEmail"
+        android:layout_width="0dp"
+        android:layout_height="3dp"
+        android:background="@android:color/holo_red_dark"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/emailText"
+        app:layout_constraintEnd_toEndOf="@+id/emailText"
+        app:layout_constraintStart_toStartOf="@+id/emailText"
+        app:layout_constraintTop_toTopOf="@+id/emailText"
+        app:layout_constraintVertical_bias="0.83" />
+
+    <View
+        android:id="@+id/dividerPass"
+        android:layout_width="0dp"
+        android:layout_height="3dp"
+        android:background="@android:color/holo_red_dark"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/passwordText"
+        app:layout_constraintEnd_toEndOf="@+id/passwordText"
+        app:layout_constraintStart_toStartOf="@+id/passwordText"
+        app:layout_constraintTop_toTopOf="@+id/passwordText"
+        app:layout_constraintVertical_bias="0.84" />
+
+    <View
+        android:id="@+id/dividerConfPass"
+        android:layout_width="0dp"
+        android:layout_height="3dp"
+        android:background="@android:color/holo_red_dark"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/confPassText"
+        app:layout_constraintEnd_toEndOf="@+id/confPassText"
+        app:layout_constraintStart_toStartOf="@+id/confPassText"
+        app:layout_constraintTop_toTopOf="@+id/confPassText"
+        app:layout_constraintVertical_bias="0.84" />
+
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         app:layout_constraintGuide_percent="0.5" />
+
+    <com.google.android.gms.common.SignInButton
+        android:id="@+id/googleButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        app:layout_constraintLeft_toLeftOf="@id/signIn"
+        app:layout_constraintTop_toBottomOf="@id/signIn" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

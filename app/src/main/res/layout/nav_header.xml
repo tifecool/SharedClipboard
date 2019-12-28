@@ -7,14 +7,35 @@
     android:theme="@style/AppTheme"
     android:orientation="vertical">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:fontFamily="sans-serif-thin"
-        android:text="@string/pinned_clips"
-        android:layout_marginStart="16dp"
-        android:textSize="30sp"
-        android:textStyle="italic" />
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-thin"
+            android:text="@string/pinned_clips"
+            android:layout_marginStart="16dp"
+            android:textSize="30sp"
+            android:textStyle="italic" />
+
+        <ImageView
+            android:id="@+id/logoutIcon"
+            android:paddingEnd="16dp"
+            android:paddingStart="16dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="11dp"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="@string/logout_button"
+            android:scaleType="fitStart"
+            android:src="@drawable/ic_logout_icon"
+            android:onClick="logoutClicked"
+            android:rotation="180"/>
+    </LinearLayout>
+
 
     <View
         android:id="@+id/divider"

@@ -16,6 +16,7 @@ import android.os.CountDownTimer;
 import android.util.Log;
 import android.view.View;
 import android.view.animation.AnimationUtils;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -24,9 +25,19 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.ChildEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.ArrayList;
 
@@ -37,7 +48,11 @@ public class MainActivity extends AppCompatActivity {
 			 Multi select when long pressed
 			 UPDATE APP SCREEN INCASE OF ANY ISSUES AND UPDATE NEEDED!
 	 */
-	public static final String LAST_INT = "lastInt";
+	//public static final String LAST_INT = "lastInt";
+	public static final String LAST_UUID = "lastUUID";
+
+	private static FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+	private static DatabaseReference savedClipRef = FirebaseDatabase.getInstance().getReference().child("users").child(currentUser.getUid()).child("saved clips");
 
 	private ImageView indicator2;
 	private ImageView indicator1;
@@ -49,13 +64,13 @@ public class MainActivity extends AppCompatActivity {
 	private Button button;
 	private static ArrayList<Long> unixTime = new ArrayList<>();
 	private static ArrayList<Integer> syncedBoolean = new ArrayList<>();
-	private ArrayList<Integer> savedClipID = new ArrayList<>();
-	private ArrayList<String> savedClipTitles = new ArrayList<>();
-	private ArrayList<String> savedClipContents = new ArrayList<>();
+	private static ArrayList<Integer> savedClipID = new ArrayList<>();
+	private static ArrayList<String> savedClipTitles = new ArrayList<>();
+	private static ArrayList<String> savedClipContents = new ArrayList<>();
 	private static ArrayAdapter savedClipAdapter;
 	private DrawerLayout drawerLayout;
 	private static SQLiteDatabase database;
-	private SharedPreferences lastIntUsed;
+	private SharedPreferences sharedPreferences;
 	private Utils.UnixTimeDownloader syncRunner;
 
 	private CountDownTimer countDownTimer = new CountDownTimer(2000, 2000) {
@@ -80,11 +95,16 @@ public class MainActivity extends AppCompatActivity {
 
 		//Database Initialization and creation
 		database = this.openOrCreateDatabase("SAVED CLIPS", MODE_PRIVATE, null);
-		lastIntUsed = this.getSharedPreferences("LastIntUsed", MODE_PRIVATE);
+		sharedPreferences = this.getSharedPreferences("LastIntUsed", MODE_PRIVATE);
 
 		//database.execSQL("DROP TABLE IF EXISTS SavedClips");
 
 		database.execSQL("CREATE TABLE IF NOT EXISTS SavedClips (id INT PRIMARY KEY, ClipTitle VARCHAR, ClipContent VARCHAR, UnixTimeLastSynced INT, Synced INT)");
+
+		if (differentUserLoggedIn() || sqlIsEmpty(database, "SavedClips")) {
+			database.execSQL("DELETE FROM SavedClips");
+			updateSqlFromFirebase();
+		}
 
 		try {
 			Cursor c = database.rawQuery("SELECT * FROM SavedClips", null);
@@ -97,11 +117,11 @@ public class MainActivity extends AppCompatActivity {
 
 			if (c.moveToFirst()) {
 				do {
-					syncedBoolean.add(c.getInt(syncedIndex));
-					unixTime.add(c.getLong(unixTimeIndex));
-					savedClipID.add(c.getInt(clipIDIndex));
-					savedClipContents.add(c.getString(clipContentIndex));
-					savedClipTitles.add(c.getString(clipTitleIndex));
+					syncedBoolean.add(0, c.getInt(syncedIndex));
+					unixTime.add(0, c.getLong(unixTimeIndex));
+					savedClipID.add(0, c.getInt(clipIDIndex));
+					savedClipContents.add(0, c.getString(clipContentIndex));
+					savedClipTitles.add(0, c.getString(clipTitleIndex));
 				} while (c.moveToNext());
 			}
 
@@ -136,6 +156,32 @@ public class MainActivity extends AppCompatActivity {
 		editText = findViewById(R.id.editbox);
 		button = findViewById(R.id.saveButton);
 		drawerLayout = findViewById(R.id.drawer_layout);
+
+		//DRAWERListener
+		drawerLayout.addDrawerListener(new DrawerLayout.DrawerListener() {
+			@Override
+			public void onDrawerSlide(@NonNull View drawerView, float slideOffset) {
+
+			}
+
+			@Override
+			public void onDrawerOpened(@NonNull View drawerView) {
+				InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+				inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+			}
+
+			@Override
+			public void onDrawerClosed(@NonNull View drawerView) {
+				InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+				inputMethodManager.showSoftInput(editText, 0);
+			}
+
+			@Override
+			public void onDrawerStateChanged(int newState) {
+
+			}
+		});
+
 
 		flickerAnimation1(indicator1);
 		flickerAnimation2(indicator2);
@@ -172,6 +218,7 @@ public class MainActivity extends AppCompatActivity {
 				}
 		);
 
+		sharedPreferences.edit().putString(LAST_UUID,currentUser.getUid()).apply();
 	}
 
 
@@ -203,6 +250,9 @@ public class MainActivity extends AppCompatActivity {
 	public void saveButtonClicked(View view) {
 		String clipContent = editText.getText().toString();
 
+		InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+		inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+
 		if (!clipContent.isEmpty()) {
 			//Animation of Indicator & OnClickListener
 			indicator1.setOnClickListener(new View.OnClickListener() {
@@ -230,27 +280,27 @@ public class MainActivity extends AppCompatActivity {
 			if (clipContent.length() > 125) {
 				String shortTit = clipContent.substring(0, 125);
 				shortTit = shortTit.concat("...");
-				savedClipTitles.add(shortTit);
+				savedClipTitles.add(0, shortTit);
 				statement.bindString(2, shortTit);
 			} else {
-				savedClipTitles.add(clipContent);
+				savedClipTitles.add(0, clipContent);
 				statement.bindString(2, clipContent);
 			}
 
-			int defaultValue = savedClipID.size() > 0 ? savedClipID.get(savedClipID.size() - 1) + 1 : 1;
-			int id = lastIntUsed.getInt(LAST_INT, defaultValue);
+			int id = savedClipID.size() > 0 ? savedClipID.get(savedClipID.size() - 1) + 1 : 1;
+			//int id = sharedPreferences.getInt(LAST_INT, defaultValue);
 
-			savedClipID.add(id);
+			savedClipID.add(0, id);
 			statement.bindLong(1, id);
 
-			lastIntUsed.edit().putInt(LAST_INT, lastIntUsed.getInt(LAST_INT, defaultValue) + 1).apply();
+			//sharedPreferences.edit().putInt(LAST_INT, sharedPreferences.getInt(LAST_INT, defaultValue) + 1).apply();
 
-			savedClipContents.add(clipContent);
+			savedClipContents.add(0, clipContent);
 			statement.bindString(3, clipContent);
 
-			unixTime.add((long) 0);
+			unixTime.add(0, (long) 0);
 			statement.bindLong(4, 0);
-			syncedBoolean.add(0);
+			syncedBoolean.add(0, 0);
 			statement.bindLong(5, 0);
 
 			statement.execute();
@@ -280,8 +330,16 @@ public class MainActivity extends AppCompatActivity {
 		while (MainActivity.unixTime.contains((long) 0)) {
 			int i = MainActivity.unixTime.indexOf((long) 0);
 
+			//Uploading to Firebase Database
+
+
 			MainActivity.unixTime.add(i, unixTime);
 			MainActivity.unixTime.remove(i + 1);
+//TODO
+			DatabaseReference currentClip = savedClipRef.child(savedClipID.get(i).toString());
+			currentClip.child("content").setValue(savedClipContents.get(i));
+			currentClip.child("title").setValue(savedClipTitles.get(i));
+			currentClip.child("unix time").setValue(MainActivity.unixTime.get(i));
 
 			syncedBoolean.add(i, 1);
 			syncedBoolean.remove(i + 1);
@@ -385,17 +443,80 @@ public class MainActivity extends AppCompatActivity {
 
 	public void indicatorClicked(View view) {
 		drawerLayout.openDrawer(GravityCompat.START);
+		InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+		inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
 	}
 
 	public void syncButtonClicked(View view) {
 
-			syncRunner = new Utils.UnixTimeDownloader();
+		InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+		inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+
+		syncRunner = new Utils.UnixTimeDownloader();
 
 		if (!unixTime.isEmpty()) {
 			syncRunner.execute("http://worldtimeapi.org/api/timezone/Etc/UTC");
-			syncImage.startAnimation(AnimationUtils.loadAnimation(MainActivity.this,R.anim.rotate));
+			syncImage.startAnimation(AnimationUtils.loadAnimation(MainActivity.this, R.anim.rotate));
 		}
 	}
+
+	public void logoutClicked(View view) {
+		FirebaseAuth.getInstance().signOut();
+		startActivity(new Intent(MainActivity.this, LoginActivity.class));
+		finish();
+	}
+
+	private boolean sqlIsEmpty(SQLiteDatabase database, String tableName) {
+
+		Cursor mcursor = database.rawQuery("SELECT count(*) FROM " + tableName, null);
+		mcursor.moveToFirst();
+		int icount = mcursor.getInt(0);
+		mcursor.close();
+		return icount <= 0;
+	}
+
+	private void updateSqlFromFirebase(){
+		savedClipRef.addChildEventListener(new ChildEventListener() {
+			@Override
+			public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+				SQLiteStatement statement =
+						database.compileStatement("INSERT INTO SavedClips (id,ClipTitle,ClipContent,UnixTimeLastSynced,Synced) VALUES (? , ? , ?, ?, 1)");
+
+				statement.bindLong(1,Long.parseLong(dataSnapshot.getKey()));
+				statement.bindString(2,dataSnapshot.child("title").getValue().toString());
+				statement.bindString(3,dataSnapshot.child("content").getValue().toString());
+				statement.bindString(4,dataSnapshot.child("unix time").getValue().toString());
+
+				statement.execute();
+			}
+
+			@Override
+			public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+			}
+
+			@Override
+			public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+
+			}
+
+			@Override
+			public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+			}
+
+			@Override
+			public void onCancelled(@NonNull DatabaseError databaseError) {
+
+			}
+		});
+	}
+
+	private boolean differentUserLoggedIn(){
+		return sharedPreferences.getString(LAST_UUID,"").equals(currentUser.getUid());
+	}
 }
+
 
 

@@ -4,6 +4,7 @@
     <string name="sign_up">Sign Up</string>
     <string name="email">E-mail</string>
     <string name="password">Password</string>
+    <string name="conf_pass">Confirm Password</string>
     <string name="app_icon">App Icon</string>
     <string name="push_pin_icon">Push Pin Icon</string>
     <string name="pinned_clips">Pinned Clips</string>
@@ -16,4 +17,13 @@
     <string name="empty_editbox">No Content To Save</string>
     <string name="reading_storage">Error Occurred In Reading Storage</string>
     <string name="sync_button">Sync Button</string>
+    <string name="cancel">Cancel</string>
+    <string name="required">Required</string>
+    <string name="conf_req_text">Must match with password</string>
+    <string name="logout_button">Logout Button</string>
+    <string name="short_password">Password must be at least 6 characters long</string>
+    <string name="invalid_email_format">Email format is invalid</string>
+    <string name="email_used">Email has already been used</string>
+    <string name="email_inexistent">Email doesn\'t exist</string>
+    <string name="incorrect_password">Incorrect Password</string>
 </resources>

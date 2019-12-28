@@ -62,6 +62,8 @@ public class ClipboardListenerService extends Service {
 					.setContentText("Running")
 					.build();
 
+			//Prevents Service from dying
+			notificationLowSdk.flags = notificationLowSdk.flags | Notification.FLAG_NO_CLEAR;
 			startForeground(1, notificationLowSdk);
 
 		}
@@ -87,6 +89,9 @@ public class ClipboardListenerService extends Service {
 				.setPriority(NotificationManager.IMPORTANCE_LOW)
 				.setCategory(Notification.CATEGORY_SERVICE)
 				.build();
+
+		//Prevents service from dying
+		notification.flags = notification.flags | Notification.FLAG_NO_CLEAR;
 		startForeground(2, notification);
 	}
 
