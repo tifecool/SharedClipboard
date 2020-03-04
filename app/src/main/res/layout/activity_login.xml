@@ -94,7 +94,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.18"
-        app:srcCompat="@color/colorPrimaryDark" />
+        android:src="@drawable/demo_icon" />
 
     <TextView
         android:id="@+id/emailReqText"

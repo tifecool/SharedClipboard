@@ -3,6 +3,8 @@ package com.fade.sharedclipboard;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.app.SearchManager;
 import android.app.Service;
 import android.content.ClipData;
 import android.content.ClipDescription;
@@ -22,13 +24,23 @@ public class ClipboardListenerService extends Service {
 	ClipboardManager clipboard;
 	ClipboardManager.OnPrimaryClipChangedListener changedListener;
 
-	public final String NOTIFICATION_CHANNEL_ID = "Clipboard.notification";
+	public static final String FOREGROUND_CHANNEL = "Clipboard.foreground.notification";
+	public static final String COPIED_CHANNEL = "Clipboard.copied.notification";
 	private NotificationManager manager;
+	private PendingIntent notifyPendingIntent;
 
 
 	@Override
 	public void onCreate() {
 		super.onCreate();
+
+		Intent notifyIntent = new Intent(this, MainActivity.class);
+		// Set the Activity to start in a new, empty task
+		notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+		// Create the PendingIntent
+		notifyPendingIntent = PendingIntent.getActivity(
+				this, 0, notifyIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
 		clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
 		manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
@@ -44,8 +56,7 @@ public class ClipboardListenerService extends Service {
 					Log.i("Clipboard ", item.getText().toString());
 					Toast.makeText(ClipboardListenerService.this, item.getText().toString(), Toast.LENGTH_SHORT).show();
 					setCurrentClip(item.getText().toString());
-
-
+					copiedNotification();
 				}
 			}
 		};
@@ -54,12 +65,13 @@ public class ClipboardListenerService extends Service {
 			startOreoAboveForeground();
 		else {
 
-			//TODO: Notifications for lower versions not displayed properly(But working)
-			//		Icon creation
-			NotificationCompat.Builder notificationBuilderLowSdk = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID);
+			NotificationCompat.Builder notificationBuilderLowSdk = new NotificationCompat.Builder(this, FOREGROUND_CHANNEL);
 			Notification notificationLowSdk = notificationBuilderLowSdk
 					.setContentTitle("Clipboard running")
 					.setContentText("Running")
+					.setContentIntent(notifyPendingIntent)
+					.setSmallIcon(R.drawable.demo_icon)
+					//.addAction(R.drawable.ic_search,"Search",searchAction())
 					.build();
 
 			//Prevents Service from dying
@@ -76,18 +88,20 @@ public class ClipboardListenerService extends Service {
 	private void startOreoAboveForeground() {
 
 		String channelName = "Clipboard Notification";
-		NotificationChannel chan = new NotificationChannel(NOTIFICATION_CHANNEL_ID, channelName, NotificationManager.IMPORTANCE_LOW);
+		NotificationChannel chan = new NotificationChannel(FOREGROUND_CHANNEL, channelName, NotificationManager.IMPORTANCE_LOW);
 		chan.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
-
 
 		assert manager != null;
 		manager.createNotificationChannel(chan);
 
-		NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID);
+		NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, FOREGROUND_CHANNEL);
 		Notification notification = notificationBuilder.setOngoing(true)
 				.setContentTitle("Clipboard running")
 				.setPriority(NotificationManager.IMPORTANCE_LOW)
 				.setCategory(Notification.CATEGORY_SERVICE)
+				.setContentIntent(notifyPendingIntent)
+				.setSmallIcon(R.drawable.demo_icon)
+				//.addAction(R.drawable.ic_search,"Search", searchAction() )
 				.build();
 
 		//Prevents service from dying
@@ -117,7 +131,6 @@ public class ClipboardListenerService extends Service {
 	}
 
 
-
 	@Override
 	public IBinder onBind(Intent intent) {
 		return null;
@@ -125,11 +138,89 @@ public class ClipboardListenerService extends Service {
 
 	private static String currentClip;
 
-	public void setCurrentClip(String clip){
+	public void setCurrentClip(String clip) {
 		currentClip = clip;
 	}
 
-	public String getCurrentClip(){
+	public String getCurrentClip() {
 		return currentClip;
+	}
+
+	private PendingIntent searchAction(){
+
+		Intent intent = new Intent(Intent.ACTION_WEB_SEARCH);
+		intent.putExtra(SearchManager.QUERY, getCurrentClip());
+		intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+		Log.d("SEARCH ACTION RAN", "searchAction: " + getCurrentClip());
+
+		return PendingIntent.getActivity(
+				this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+	}
+
+	private void copiedNotification(){
+
+		Notification copiedNotify;
+
+		if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
+
+			String copiedNotificationName = "Copied Notifications";
+			NotificationChannel chan1 = new NotificationChannel(COPIED_CHANNEL, copiedNotificationName, NotificationManager.IMPORTANCE_HIGH);
+			chan1.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+			manager.createNotificationChannel(chan1);
+
+			String currentClipContent = getCurrentClip();
+			boolean above150 = false;
+
+			if (currentClipContent.length() > 150) {
+				currentClipContent = currentClipContent.substring(0, 150);
+				currentClipContent = currentClipContent.concat("...");
+				above150 = true;
+			}
+
+			NotificationCompat.Builder copiedNotifyBuilder = new NotificationCompat.Builder(this, COPIED_CHANNEL);
+			copiedNotifyBuilder
+					.setContentTitle("New Clip")
+					.setContentText(currentClipContent)
+					.setPriority(NotificationManager.IMPORTANCE_HIGH)
+					.setCategory(Notification.CATEGORY_EVENT)
+					.setContentIntent(notifyPendingIntent)
+					.setSmallIcon(R.drawable.demo_icon);
+
+			if(above150){
+				copiedNotify = copiedNotifyBuilder.build();
+			}else{
+				copiedNotify = copiedNotifyBuilder.addAction(R.drawable.ic_search,"Search", searchAction() )
+						.build();
+			}
+
+		}else {
+
+			String currentClipContent = getCurrentClip();
+			boolean above150 = false;
+
+			if (currentClipContent.length() > 150) {
+				currentClipContent = currentClipContent.substring(0, 150);
+				currentClipContent = currentClipContent.concat("...");
+				above150 = true;
+			}
+
+			NotificationCompat.Builder copiedNotifyBuilder = new NotificationCompat.Builder(this, COPIED_CHANNEL);
+			copiedNotifyBuilder
+					.setContentTitle(getString(R.string.new_clip))
+					.setContentText(currentClipContent)
+					.setContentIntent(notifyPendingIntent)
+					.setSmallIcon(R.drawable.demo_icon)
+					//.addAction(R.drawable.ic_share,getString(R.string.share),)
+					.build();
+
+			if(above150){
+				copiedNotify = copiedNotifyBuilder.build();
+			}else{
+				copiedNotify = copiedNotifyBuilder.addAction(R.drawable.ic_search,getString(R.string.search), searchAction() )
+						.build();
+			}
+		}
+
+		manager.notify(1,copiedNotify);
 	}
 }

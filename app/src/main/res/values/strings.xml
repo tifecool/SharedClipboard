@@ -11,10 +11,11 @@
     <string name="clipboard_text">Current Clipboard Text…</string>
     <string name="save" formatted="true">&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;SAVE</string>
     <string name="shared_clipboard">Shared Clipboard</string>
-    <string name="share">Share to pc</string>
+    <string name="share">Share To Devices</string>
     <string name="indicator">Indicator</string>
     <string name="saved">SAVED!</string>
     <string name="empty_editbox">No Content To Save</string>
+    <string name="empty_editbox_share">No Content To Save</string>
     <string name="reading_storage">Error Occurred In Reading Storage</string>
     <string name="sync_button">Sync Button</string>
     <string name="cancel">Cancel</string>
@@ -26,4 +27,12 @@
     <string name="email_used">Email has already been used</string>
     <string name="email_inexistent">Email doesn\'t exist</string>
     <string name="incorrect_password">Incorrect Password</string>
+    <string name="profile_pic">Profile Pic</string>
+    <string name="new_clip">New Clip</string>
+    <string name="failed_to_upload">Failed To Upload Current Clip</string>
+    <string name="search">Search</string>
+    <string name="delete">Delete</string>
+    <string name="edit">Edit</string>
+    <string name="delete_conf">Delete?</string>
+    <string name="delete_conf_message">Are you sure you want to delete these clips?</string>
 </resources>

@@ -12,7 +12,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -30,11 +29,11 @@ import com.google.firebase.auth.FirebaseAuthInvalidUserException;
 import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException;
 import com.google.firebase.auth.GoogleAuthProvider;
-import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 public class LoginActivity extends AppCompatActivity {
 	final static int RC_SIGN_IN = 9;
@@ -84,7 +83,7 @@ public class LoginActivity extends AppCompatActivity {
 										if (e.getErrorCode().equals("ERROR_INVALID_EMAIL")) {
 											Toast.makeText(LoginActivity.this, getString(R.string.invalid_email_format), Toast.LENGTH_SHORT).show();
 											emailText.requestFocus();
-										}else {
+										} else {
 											Toast.makeText(LoginActivity.this, getString(R.string.incorrect_password), Toast.LENGTH_SHORT).show();
 											passwordText.requestFocus();
 										}
@@ -159,6 +158,7 @@ public class LoginActivity extends AppCompatActivity {
 		confPass = findViewById(R.id.confPassText);
 
 		intent = new Intent(this, MainActivity.class);
+		intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
 		signInButton.setOnClickListener(signInClick);
 
@@ -169,6 +169,17 @@ public class LoginActivity extends AppCompatActivity {
 				.build();
 
 		mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
+
+		Intent intent = getIntent();
+		if (intent.getBooleanExtra(MainActivity.main_activity_intent, false)) {
+			mGoogleSignInClient.signOut();
+		}
+
+		GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+
+		if (account != null) {
+			firebaseAuthWithGoogle(account);
+		}
 
 		//Google Button OnclickListener
 		findViewById(R.id.googleButton).setOnClickListener(new View.OnClickListener() {
@@ -184,7 +195,7 @@ public class LoginActivity extends AppCompatActivity {
 			@Override
 			public void onClick(View view) {
 				InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-				inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(),0);
+				inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
 			}
 		});
 
@@ -194,9 +205,9 @@ public class LoginActivity extends AppCompatActivity {
 			@Override
 			public boolean onKey(View view, int i, KeyEvent keyEvent) {
 
-				if(keyEvent.getAction() == KeyEvent.ACTION_DOWN && i == KeyEvent.KEYCODE_ENTER && signupClickInt == 0){
+				if (keyEvent.getAction() == KeyEvent.ACTION_DOWN && i == KeyEvent.KEYCODE_ENTER && signupClickInt == 0) {
 					InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-					inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(),0);
+					inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
 					signInClick.onClick(signInButton);
 				}
 				return false;
@@ -207,9 +218,9 @@ public class LoginActivity extends AppCompatActivity {
 		confPass.setOnKeyListener(new View.OnKeyListener() {
 			@Override
 			public boolean onKey(View view, int i, KeyEvent keyEvent) {
-				if(keyEvent.getAction() == KeyEvent.ACTION_DOWN && i == KeyEvent.KEYCODE_ENTER && signupClickInt == 1){
+				if (keyEvent.getAction() == KeyEvent.ACTION_DOWN && i == KeyEvent.KEYCODE_ENTER && signupClickInt == 1) {
 					InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-					inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(),0);
+					inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
 					signUpClicked(null);
 				}
 				return false;
@@ -330,7 +341,6 @@ public class LoginActivity extends AppCompatActivity {
 
 				// Signed in successfully, show authenticated UI.
 				if (account != null) {
-					Toast.makeText(this, account.getId() + " " + account.getDisplayName(), Toast.LENGTH_SHORT).show();
 					firebaseAuthWithGoogle(account);
 				}
 			} catch (ApiException e) {
@@ -345,6 +355,7 @@ public class LoginActivity extends AppCompatActivity {
 	private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
 
 		AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
+
 
 		mAuth.signInWithCredential(credential)
 				.addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
@@ -404,28 +415,12 @@ public class LoginActivity extends AppCompatActivity {
 
 	private boolean newUser(final String userUid) {
 
-
-		databaseUsersReference.addChildEventListener(new ChildEventListener() {
+		databaseUsersReference.addListenerForSingleValueEvent(new ValueEventListener() {
 			@Override
-			public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+			public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 				if (dataSnapshot.hasChild(userUid)) {
 					newUserBoolean = false;
 				}
-			}
-
-			@Override
-			public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-			}
-
-			@Override
-			public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
-
-			}
-
-			@Override
-			public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
 			}
 
 			@Override

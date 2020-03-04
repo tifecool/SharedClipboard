@@ -1,47 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="100dp"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:gravity="bottom"
     android:theme="@style/AppTheme"
     android:orientation="vertical">
 
-    <LinearLayout
+
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
         <TextView
+            android:id="@+id/pinnedText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
             android:fontFamily="sans-serif-thin"
             android:text="@string/pinned_clips"
-            android:layout_marginStart="16dp"
             android:textSize="30sp"
-            android:textStyle="italic" />
+            android:textStyle="italic"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/profile"
+            app:layout_constraintBottom_toBottomOf="@id/pinnedText"
+            app:layout_constraintEnd_toStartOf="@+id/logoutIcon"
+            app:layout_constraintStart_toEndOf="@id/pinnedText"
+            android:layout_marginBottom="10dp"
+            android:contentDescription="@string/profile_pic"
+            android:onClick="profileClicked"/>
 
         <ImageView
             android:id="@+id/logoutIcon"
-            android:paddingEnd="16dp"
-            android:paddingStart="16dp"
-            android:paddingTop="6dp"
-            android:paddingBottom="11dp"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginBottom="10dp"
+            android:layout_marginEnd="10dp"
             android:contentDescription="@string/logout_button"
+            android:onClick="logoutClicked"
+            android:rotation="180"
             android:scaleType="fitStart"
             android:src="@drawable/ic_logout_icon"
-            android:onClick="logoutClicked"
-            android:rotation="180"/>
-    </LinearLayout>
-
+            app:layout_constraintBottom_toBottomOf="@id/pinnedText"
+            app:layout_constraintEnd_toEndOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <View
         android:id="@+id/divider"
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="10dp"
         android:background="#575757" />
 
 </LinearLayout>
