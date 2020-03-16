@@ -9,13 +9,13 @@
     <string name="push_pin_icon">Push Pin Icon</string>
     <string name="pinned_clips">Pinned Clips</string>
     <string name="clipboard_text">Current Clipboard Text…</string>
-    <string name="save" formatted="true">&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;SAVE</string>
+    <string name="save_f" formatted="true">&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;SAVE</string>
+    <string name="save">Save</string>
     <string name="shared_clipboard">Shared Clipboard</string>
     <string name="share">Share To Devices</string>
     <string name="indicator">Indicator</string>
     <string name="saved">SAVED!</string>
     <string name="empty_editbox">No Content To Save</string>
-    <string name="empty_editbox_share">No Content To Save</string>
     <string name="reading_storage">Error Occurred In Reading Storage</string>
     <string name="sync_button">Sync Button</string>
     <string name="cancel">Cancel</string>
@@ -35,4 +35,10 @@
     <string name="edit">Edit</string>
     <string name="delete_conf">Delete?</string>
     <string name="delete_conf_message">Are you sure you want to delete these clips?</string>
+    <string name="content">Content</string>
+    <string name="copied">Copied to Clipboard!</string>
+    <string name="text_limit">Text Limit Reached (3000 characters)</string>
+    <string name="search_limit">Search Limit Reached (150 characters)</string>
+    <string name="warning_symbol">Warning Symbol</string>
+    <string name="please_update_app">Please Update App</string>
 </resources>

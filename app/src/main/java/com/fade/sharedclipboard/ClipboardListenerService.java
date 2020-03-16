@@ -14,7 +14,6 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
-import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
@@ -34,6 +33,7 @@ public class ClipboardListenerService extends Service {
 	public void onCreate() {
 		super.onCreate();
 
+		StartService.killedProg = false;
 		Intent notifyIntent = new Intent(this, MainActivity.class);
 		// Set the Activity to start in a new, empty task
 		notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -54,9 +54,10 @@ public class ClipboardListenerService extends Service {
 					ClipData.Item item = clipboard.getPrimaryClip().getItemAt(0);
 
 					Log.i("Clipboard ", item.getText().toString());
-					Toast.makeText(ClipboardListenerService.this, item.getText().toString(), Toast.LENGTH_SHORT).show();
+					//Toast.makeText(ClipboardListenerService.this, item.getText().toString(), Toast.LENGTH_SHORT).show();
 					setCurrentClip(item.getText().toString());
-					copiedNotification();
+					if (!ActivityVisibility.isActivityVisible())
+						copiedNotification();
 				}
 			}
 		};
@@ -146,7 +147,7 @@ public class ClipboardListenerService extends Service {
 		return currentClip;
 	}
 
-	private PendingIntent searchAction(){
+	private PendingIntent searchAction() {
 
 		Intent intent = new Intent(Intent.ACTION_WEB_SEARCH);
 		intent.putExtra(SearchManager.QUERY, getCurrentClip());
@@ -157,7 +158,7 @@ public class ClipboardListenerService extends Service {
 				this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 	}
 
-	private void copiedNotification(){
+	private void copiedNotification() {
 
 		Notification copiedNotify;
 
@@ -165,7 +166,7 @@ public class ClipboardListenerService extends Service {
 
 			String copiedNotificationName = "Copied Notifications";
 			NotificationChannel chan1 = new NotificationChannel(COPIED_CHANNEL, copiedNotificationName, NotificationManager.IMPORTANCE_HIGH);
-			chan1.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+			chan1.setLockscreenVisibility(Notification.VISIBILITY_SECRET);
 			manager.createNotificationChannel(chan1);
 
 			String currentClipContent = getCurrentClip();
@@ -186,14 +187,20 @@ public class ClipboardListenerService extends Service {
 					.setContentIntent(notifyPendingIntent)
 					.setSmallIcon(R.drawable.demo_icon);
 
-			if(above150){
-				copiedNotify = copiedNotifyBuilder.build();
-			}else{
-				copiedNotify = copiedNotifyBuilder.addAction(R.drawable.ic_search,"Search", searchAction() )
+			if (above150) {
+				if (currentClipContent.length() > 3000) {
+					copiedNotify = copiedNotifyBuilder.setSubText(getString(R.string.text_limit))
+							.build();
+				}else{
+					copiedNotify = copiedNotifyBuilder.setSubText(getString(R.string.search_limit))
+							.build();
+				}
+			} else {
+				copiedNotify = copiedNotifyBuilder.addAction(R.drawable.ic_search, getString(R.string.search), searchAction())
 						.build();
 			}
 
-		}else {
+		} else {
 
 			String currentClipContent = getCurrentClip();
 			boolean above150 = false;
@@ -209,18 +216,22 @@ public class ClipboardListenerService extends Service {
 					.setContentTitle(getString(R.string.new_clip))
 					.setContentText(currentClipContent)
 					.setContentIntent(notifyPendingIntent)
-					.setSmallIcon(R.drawable.demo_icon)
-					//.addAction(R.drawable.ic_share,getString(R.string.share),)
-					.build();
+					.setSmallIcon(R.drawable.demo_icon);
 
-			if(above150){
-				copiedNotify = copiedNotifyBuilder.build();
-			}else{
-				copiedNotify = copiedNotifyBuilder.addAction(R.drawable.ic_search,getString(R.string.search), searchAction() )
+			if (above150) {
+				if (currentClipContent.length() > 3000) {
+					copiedNotify = copiedNotifyBuilder.setSubText(getString(R.string.text_limit))
+							.build();
+				}else{
+					copiedNotify = copiedNotifyBuilder.setSubText(getString(R.string.search_limit))
+							.build();
+				}
+			} else {
+				copiedNotify = copiedNotifyBuilder.addAction(R.drawable.ic_search, getString(R.string.search), searchAction())
 						.build();
 			}
 		}
 
-		manager.notify(1,copiedNotify);
+		manager.notify(1, copiedNotify);
 	}
 }

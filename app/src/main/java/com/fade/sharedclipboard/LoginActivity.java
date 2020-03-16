@@ -29,11 +29,8 @@ import com.google.firebase.auth.FirebaseAuthInvalidUserException;
 import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException;
 import com.google.firebase.auth.GoogleAuthProvider;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 
 public class LoginActivity extends AppCompatActivity {
 	final static int RC_SIGN_IN = 9;
@@ -367,9 +364,7 @@ public class LoginActivity extends AppCompatActivity {
 							Log.d("Success", "signInWithCredential:success");
 
 							String userUid = mAuth.getCurrentUser().getUid();
-							if (newUser(userUid)) {
-								databaseUsersReference.child(userUid).child("email").setValue(mAuth.getCurrentUser().getEmail());
-							}
+							databaseUsersReference.child(userUid).child("email").setValue(mAuth.getCurrentUser().getEmail());
 							startActivity(intent);
 							finish();
 						} else {
@@ -409,27 +404,6 @@ public class LoginActivity extends AppCompatActivity {
 			confPassReqText.setVisibility(View.GONE);
 			dividerConfPass.setVisibility(View.GONE);
 		}
-	}
-
-	Boolean newUserBoolean = true;
-
-	private boolean newUser(final String userUid) {
-
-		databaseUsersReference.addListenerForSingleValueEvent(new ValueEventListener() {
-			@Override
-			public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-				if (dataSnapshot.hasChild(userUid)) {
-					newUserBoolean = false;
-				}
-			}
-
-			@Override
-			public void onCancelled(@NonNull DatabaseError databaseError) {
-
-			}
-		});
-
-		return newUserBoolean;
 	}
 
 }
