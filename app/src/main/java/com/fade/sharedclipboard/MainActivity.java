@@ -70,8 +70,6 @@ public class MainActivity extends AppCompatActivity {
 
 	private String userEmail;
 
-	private ImageView indicator2;
-	private ImageView indicator1;
 	private ImageView pushPinImage;
 	private ImageView syncImage;
 	private EditText editText;
@@ -154,13 +152,6 @@ public class MainActivity extends AppCompatActivity {
 			database = this.openOrCreateDatabase("SAVED CLIPS", MODE_PRIVATE, null);
 			sharedPreferences = this.getSharedPreferences("LastUser", MODE_PRIVATE);
 
-			if (updateRequired(this)) {
-				Intent intent = new Intent(MainActivity.this, UpdateRequiredActivity.class);
-				intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
-
-				startActivity(intent);
-			}
-
 			//database.execSQL("DROP TABLE IF EXISTS SavedClips");
 
 			//Database Tables
@@ -168,11 +159,10 @@ public class MainActivity extends AppCompatActivity {
 			database.execSQL("CREATE TABLE IF NOT EXISTS DeletedClips (id VARCHAR(36) PRIMARY KEY, ClipTitle VARCHAR, ClipContent VARCHAR, UnixTimeLastSynced INT, Synced INT)");
 
 			//User Check
-			if (differentUserLoggedIn() || sqlIsEmpty(database, "SavedClips")) {
+			if (differentUserLoggedIn()) {
 
 				database.execSQL("DELETE FROM SavedClips");
 				database.execSQL("DELETE FROM DeletedClips");
-				updateFromFirebase();
 			} else {
 
 				//Populate saved Arrays from SQL
@@ -229,6 +219,8 @@ public class MainActivity extends AppCompatActivity {
 				}
 			}
 
+			//Online Database Querying
+			updateFromFirebase();
 
 			//Add clipboard listener
 			clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
@@ -243,6 +235,7 @@ public class MainActivity extends AppCompatActivity {
 						ClipData.Item item = clipboard.getPrimaryClip().getItemAt(0);
 
 						editText.setText(item.getText());
+						sharedPreferences.edit().putString("CURRENT_CLIP", item.getText().toString()).apply();
 
 					}
 				}
@@ -250,15 +243,29 @@ public class MainActivity extends AppCompatActivity {
 
 			//Find Views By Id's
 			syncImage = findViewById(R.id.syncImage);
-			indicator1 = findViewById(R.id.indicator1);
-			indicator2 = findViewById(R.id.indicator2);
 			pushPinImage = findViewById(R.id.pushPinImage);
 			editText = findViewById(R.id.editbox);
 			button = findViewById(R.id.saveButton);
 			drawerLayout = findViewById(R.id.drawer_layout);
 
-			/*flickerAnimation1(indicator1);
-			flickerAnimation2(indicator2);*/
+
+			FirebaseDatabase.getInstance().getReference().child("users").child(currentUser.getUid()).child("current clip").addValueEventListener(new ValueEventListener() {
+				@Override
+				public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+
+					try {
+						editText.setText(dataSnapshot.getValue().toString());
+						sharedPreferences.edit().putString("CURRENT_CLIP", dataSnapshot.getValue().toString()).apply();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+
+				@Override
+				public void onCancelled(@NonNull DatabaseError databaseError) {
+					editText.setText(sharedPreferences.getString("CURRENT_CLIP", ""));
+				}
+			});
 
 			//Clipboard Service check and startup
 			ClipboardListenerService clipboardService = new ClipboardListenerService();
@@ -305,12 +312,20 @@ public class MainActivity extends AppCompatActivity {
 		super.onResume();
 		ActivityVisibility.activityResumed();
 
+		if (updateRequired(this)) {
+			Intent intent = new Intent(MainActivity.this, UpdateRequiredActivity.class);
+			intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+
+			startActivity(intent);
+		}
+
 		Log.d("ONRESUME RAN", "ONRESUME: ");
 
 		findViewById(R.id.dummy).requestFocus();
 
 		if (clipboardListenerObj.getCurrentClip() != null) {
 			editText.setText(clipboardListenerObj.getCurrentClip());
+			sharedPreferences.edit().putString("CURRENT_CLIP", clipboardListenerObj.getCurrentClip()).apply();
 		}
 
 	}
@@ -466,87 +481,6 @@ public class MainActivity extends AppCompatActivity {
 
 	}
 
-
-	/* ANIMATIONS
-	float alphaVal1;
-	float alphaVal2;
-	Animator.AnimatorListener listener1;
-	Animator.AnimatorListener listener2;
-	final int ANIM_DURATION = 2000;
-
-	private void flickerAnimation1(final ImageView imageView) {
-		alphaVal1 = 0.1f;
-
-		listener1 = new Animator.AnimatorListener() {
-			@Override
-			public void onAnimationStart(Animator animation) {
-
-			}
-
-			@Override
-			public void onAnimationEnd(Animator animation) {
-				if (alphaVal1 == 0.1f) {
-					alphaVal1 = 0.8f;
-					imageView.animate().alpha(alphaVal1).setDuration(ANIM_DURATION).setListener(listener1);
-				} else if (alphaVal1 == 0.8f) {
-					alphaVal1 = 0f;
-					imageView.animate().alpha(alphaVal1).setDuration(ANIM_DURATION).setListener(listener1);
-				} else if (alphaVal2 == 0f) {
-					indicator1.setOnClickListener(null);
-				}
-			}
-
-			@Override
-			public void onAnimationCancel(Animator animation) {
-
-			}
-
-			@Override
-			public void onAnimationRepeat(Animator animation) {
-
-			}
-		};
-
-		imageView.animate().alpha(alphaVal1).setDuration(ANIM_DURATION).setListener(listener1);
-	}
-
-	private void flickerAnimation2(final ImageView imageView) {
-		alphaVal2 = 0.1f;
-
-		listener2 = new Animator.AnimatorListener() {
-			@Override
-			public void onAnimationStart(Animator animation) {
-
-			}
-
-			@Override
-			public void onAnimationEnd(Animator animation) {
-				if (alphaVal2 == 0.1f) {
-					alphaVal2 = 0.8f;
-					imageView.animate().alpha(alphaVal2).setDuration(ANIM_DURATION).setListener(listener2);
-				} else if (alphaVal2 == 0.8f) {
-					alphaVal2 = 0f;
-					imageView.animate().alpha(alphaVal2).setDuration(ANIM_DURATION).setListener(listener2);
-				} else if (alphaVal2 == 0f) {
-					indicator2.setOnClickListener(null);
-				}
-			}
-
-			@Override
-			public void onAnimationCancel(Animator animation) {
-
-			}
-
-			@Override
-			public void onAnimationRepeat(Animator animation) {
-
-			}
-		};
-
-		imageView.animate().alpha(alphaVal2).setDuration(ANIM_DURATION).setListener(listener2);
-	}*/
-
-
 	public void indicatorClicked(View view) {
 		drawerLayout.openDrawer(GravityCompat.START);
 	}
@@ -556,6 +490,7 @@ public class MainActivity extends AppCompatActivity {
 		syncRunner = new Utils.UnixTimeDownloader();
 
 		if (!unixTime.isEmpty()) {
+			updateFromFirebase();
 			syncRunner.execute("https://worldtimeapi.org/api/timezone/Etc/UTC");
 			syncImage.startAnimation(AnimationUtils.loadAnimation(MainActivity.this, R.anim.rotate));
 		}
@@ -574,15 +509,6 @@ public class MainActivity extends AppCompatActivity {
 		finish();
 	}
 
-	private boolean sqlIsEmpty(SQLiteDatabase database, String tableName) {
-
-		Cursor mcursor = database.rawQuery("SELECT count(*) FROM " + tableName, null);
-		mcursor.moveToFirst();
-		int icount = mcursor.getInt(0);
-		mcursor.close();
-		return icount <= 0;
-	}
-
 	private void updateFromFirebase() {
 
 		try {
@@ -597,17 +523,51 @@ public class MainActivity extends AppCompatActivity {
 							database.compileStatement("INSERT INTO SavedClips (id,ClipTitle,ClipContent,UnixTimeLastSynced,Synced) VALUES (? , ? , ?, ?, 1)");
 
 					for (DataSnapshot savedClip : dataSnapshot.getChildren()) {
-						statement.bindString(1, savedClip.getKey());
-						statement.bindString(2, savedClip.child("title").getValue().toString());
-						statement.bindString(3, savedClip.child("content").getValue().toString());
-						statement.bindLong(4, (long) savedClip.child("unix time").getValue());
-						statement.execute();
 
-						syncedBoolean.add(0, 1);
-						unixTime.add(0, (long) savedClip.child("unix time").getValue());
-						savedClipID.add(0, savedClip.getKey());
-						savedClipContents.add(0, savedClip.child("content").getValue().toString());
-						savedClipTitles.add(0, savedClip.child("title").getValue().toString());
+						if (!savedClipID.contains(savedClip.getKey())) {
+
+							if (dSavedClipID.contains(savedClip.getKey())) {
+								int i = dSavedClipID.indexOf(savedClip.getKey());
+
+								if (dUnixTime.get(i) < (long) savedClip.child("unix time").getValue() && dSyncedBoolean.get(i) != 0) {
+
+									dSavedClipID.remove(i);
+									dSavedClipContents.remove(i);
+									dSavedClipTitles.remove(i);
+									dUnixTime.remove(i);
+									dSyncedBoolean.remove(i);
+								} else {
+									savedClipRef.child(dSavedClipID.get(i)).removeValue();
+
+									DatabaseReference currentClip = deletedClipRef.child(dSavedClipID.get(i));
+									currentClip.child("content").setValue(dSavedClipContents.get(i));
+									currentClip.child("title").setValue(dSavedClipTitles.get(i));
+									currentClip.child("unix time").setValue(dUnixTime.get(i));
+									continue;
+								}
+							}
+
+							statement.bindString(1, savedClip.getKey());
+							statement.bindString(2, savedClip.child("title").getValue().toString());
+							statement.bindString(3, savedClip.child("content").getValue().toString());
+							statement.bindLong(4, (long) savedClip.child("unix time").getValue());
+							statement.execute();
+
+							int i;
+							if (!unixTime.isEmpty()) {
+								i = binarySearch(unixTime, unixTime.size() - 1, 0, (long) savedClip.child("unix time").getValue());
+							} else {
+								i = 0;
+							}
+
+							syncedBoolean.add(i, 1);
+							unixTime.add(i, (long) savedClip.child("unix time").getValue());
+							savedClipID.add(i, savedClip.getKey());
+							savedClipContents.add(i, savedClip.child("content").getValue().toString());
+							savedClipTitles.add(i, savedClip.child("title").getValue().toString());
+
+
+						}
 
 					}
 
@@ -632,19 +592,52 @@ public class MainActivity extends AppCompatActivity {
 					SQLiteStatement statement =
 							database.compileStatement("INSERT INTO DeletedClips (id,ClipTitle,ClipContent,UnixTimeLastSynced,Synced) VALUES (? , ? , ?, ?, 1)");
 
-					for (DataSnapshot deletedClips : dataSnapshot.getChildren()) {
-						statement.bindString(1, deletedClips.getKey());
-						statement.bindString(2, deletedClips.child("title").getValue().toString());
-						statement.bindString(3, deletedClips.child("content").getValue().toString());
-						statement.bindLong(4, (long) deletedClips.child("unix time").getValue());
-						statement.execute();
+					for (DataSnapshot deletedClip : dataSnapshot.getChildren()) {
 
-						dSyncedBoolean.add(0, 1);
-						dUnixTime.add(0, (long) deletedClips.child("unix time").getValue());
-						dSavedClipID.add(0, deletedClips.getKey());
-						dSavedClipContents.add(0, deletedClips.child("content").getValue().toString());
-						dSavedClipTitles.add(0, deletedClips.child("title").getValue().toString());
+						if (!dSavedClipID.contains(deletedClip.getKey())) {
 
+							if (savedClipID.contains(deletedClip.getKey())) {
+								int i = savedClipID.indexOf(deletedClip.getKey());
+
+								if (unixTime.get(i) < (long) deletedClip.child("unix time").getValue() && syncedBoolean.get(i) != 0) {
+
+									savedClipID.remove(i);
+									savedClipContents.remove(i);
+									savedClipTitles.remove(i);
+									unixTime.remove(i);
+									syncedBoolean.remove(i);
+
+								} else {
+									deletedClipRef.child(savedClipID.get(i)).removeValue();
+
+									DatabaseReference currentClip = savedClipRef.child(savedClipID.get(i));
+									currentClip.child("content").setValue(savedClipContents.get(i));
+									currentClip.child("title").setValue(savedClipTitles.get(i));
+									currentClip.child("unix time").setValue(unixTime.get(i));
+									continue;
+								}
+							}
+
+							statement.bindString(1, deletedClip.getKey());
+							statement.bindString(2, deletedClip.child("title").getValue().toString());
+							statement.bindString(3, deletedClip.child("content").getValue().toString());
+							statement.bindLong(4, (long) deletedClip.child("unix time").getValue());
+							statement.execute();
+
+							int i;
+							if (!dUnixTime.isEmpty()) {
+								i = binarySearch(dUnixTime, dUnixTime.size() - 1, 0, (long) deletedClip.child("unix time").getValue());
+							} else {
+								i = 0;
+							}
+
+							dSyncedBoolean.add(i, 1);
+							dUnixTime.add(i, (long) deletedClip.child("unix time").getValue());
+							dSavedClipID.add(i, deletedClip.getKey());
+							dSavedClipContents.add(i, deletedClip.child("content").getValue().toString());
+							dSavedClipTitles.add(i, deletedClip.child("title").getValue().toString());
+
+						}
 					}
 
 
@@ -655,7 +648,8 @@ public class MainActivity extends AppCompatActivity {
 
 				}
 			});
-		} catch (Exception e) {
+		} catch (
+				Exception e) {
 			e.printStackTrace();
 		}
 
@@ -694,7 +688,7 @@ public class MainActivity extends AppCompatActivity {
 		context.startActivity(intent);
 	}*/
 
-	//TODO: VERY USEFUL CODE FOR REMOVING FOCUS ON EDITTEXT
+	//VERY USEFUL CODE FOR REMOVING FOCUS ON EDITTEXT
 	@Override
 	public boolean dispatchTouchEvent(MotionEvent ev) {
 		if (ev.getAction() == MotionEvent.ACTION_DOWN) {
@@ -923,6 +917,7 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	private int required = 2;
+
 	public boolean updateRequired(Context context) {
 
 		sharedPreferences = context.getSharedPreferences("LastUser", MODE_PRIVATE);
@@ -955,6 +950,37 @@ public class MainActivity extends AppCompatActivity {
 			return APP_VERSION <= sharedPreferences.getFloat("updateVersion", 0);
 		}
 
+	}
+
+	//Searches for lowest number compared to x in array
+	//Returns position of lowest value in array compared to x in array
+	//r - right l - left, x value
+	int binarySearch(ArrayList<Long> arr, int r, int l, long x) {
+		if (r > l) {
+			//ints are rounded down
+			int mid = l + ((r - l) / 2);
+
+			// If the element is present at the middle itself
+			if (arr.get(mid) == x)
+				return mid;
+
+			// If x is smaller than value at mid, then lowest value can only be present in right subarray
+			if (arr.get(mid) > x) {
+				return binarySearch(arr, r, mid + 1, x);
+			} else if (mid == 0) {
+				return mid;
+			} else {
+				// Else the lowest value can only be present in left subarray
+				return binarySearch(arr, mid - 1, l, x);
+			}
+
+		} else {
+			if (arr.get(r) > x) {
+				return r + 1;
+			} else {
+				return r;
+			}
+		}
 	}
 
 

@@ -14,7 +14,7 @@ public class UpdateRequiredActivity extends AppCompatActivity {
 
 		MainActivity object = new MainActivity();
 
-		if(!object.updateRequired(this)){
+		if (!object.updateRequired(this)) {
 			Intent intent = new Intent(UpdateRequiredActivity.this, MainActivity.class);
 			intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
 

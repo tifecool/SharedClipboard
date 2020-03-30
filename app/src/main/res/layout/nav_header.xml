@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="100dp"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:gravity="bottom"
-    android:theme="@style/AppTheme"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:theme="@style/AppTheme">
 
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -26,30 +26,67 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:src="@drawable/profile"
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/profImageConst"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:onClick="profileClicked"
+            android:orientation="vertical"
             app:layout_constraintBottom_toBottomOf="@id/pinnedText"
-            app:layout_constraintEnd_toStartOf="@+id/logoutIcon"
+            app:layout_constraintEnd_toStartOf="@+id/guideline6"
             app:layout_constraintStart_toEndOf="@id/pinnedText"
-            android:layout_marginBottom="10dp"
-            android:contentDescription="@string/profile_pic"
-            android:onClick="profileClicked"/>
+            app:layout_constraintTop_toTopOf="parent">
 
-        <ImageView
-            android:id="@+id/logoutIcon"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:layout_marginBottom="10dp"
-            android:layout_marginEnd="10dp"
-            android:contentDescription="@string/logout_button"
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginBottom="10dp"
+                android:contentDescription="@string/profile_pic"
+                android:src="@drawable/profile"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="1.0" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/logoutIconConst"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
             android:onClick="logoutClicked"
-            android:rotation="180"
-            android:scaleType="fitStart"
-            android:src="@drawable/ic_logout_icon"
+            android:orientation="vertical"
             app:layout_constraintBottom_toBottomOf="@id/pinnedText"
-            app:layout_constraintEnd_toEndOf="parent" />
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/guideline6"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <ImageView
+                android:id="@+id/logoutIcon"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginEnd="10dp"
+                android:layout_marginBottom="10dp"
+                android:contentDescription="@string/logout_button"
+                android:rotation="180"
+                android:scaleType="fitStart"
+                android:src="@drawable/ic_logout_icon"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="1.0"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="1.0" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline6"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent="0.84" />
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <View

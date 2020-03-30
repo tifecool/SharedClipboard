@@ -126,6 +126,34 @@ class Utils {
 		return object;
 	}
 */
+
+	/*private boolean sqlIsEmpty(SQLiteDatabase database, String tableName) {
+
+		Cursor mcursor = database.rawQuery("SELECT count(*) FROM " + tableName, null);
+		mcursor.moveToFirst();
+		int icount = mcursor.getInt(0);
+		mcursor.close();
+		return icount <= 0;
+	}*/
+
+	//VERY USEFUL CODE FOR REMOVING FOCUS ON EDITTEXT
+	/*@Override
+	public boolean dispatchTouchEvent(MotionEvent ev) {
+		if (ev.getAction() == MotionEvent.ACTION_DOWN) {
+			View v = getCurrentFocus();
+			if (v instanceof EditText) {
+				Rect outRect = new Rect();
+				v.getGlobalVisibleRect(outRect);
+				if (!outRect.contains((int) ev.getRawX(), (int) ev.getRawY())) {
+					Log.d("focus", "touchevent");
+					v.clearFocus();
+					InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+					imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+				}
+			}
+		}
+		return super.dispatchTouchEvent(ev);
+	}*/
 }
 
 

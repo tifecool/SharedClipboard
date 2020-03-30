@@ -48,7 +48,7 @@
         <service
             android:name=".ClipboardListenerService"
             android:enabled="true"
-            android:exported="true" />
+            android:exported="false" />
     </application>
 
 </manifest>

@@ -191,7 +191,7 @@ public class ClipboardListenerService extends Service {
 				if (currentClipContent.length() > 3000) {
 					copiedNotify = copiedNotifyBuilder.setSubText(getString(R.string.text_limit))
 							.build();
-				}else{
+				} else {
 					copiedNotify = copiedNotifyBuilder.setSubText(getString(R.string.search_limit))
 							.build();
 				}
@@ -222,7 +222,7 @@ public class ClipboardListenerService extends Service {
 				if (currentClipContent.length() > 3000) {
 					copiedNotify = copiedNotifyBuilder.setSubText(getString(R.string.text_limit))
 							.build();
-				}else{
+				} else {
 					copiedNotify = copiedNotifyBuilder.setSubText(getString(R.string.search_limit))
 							.build();
 				}

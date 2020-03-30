@@ -18,6 +18,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -44,6 +45,8 @@ public class LoginActivity extends AppCompatActivity {
 	private EditText emailText;
 	private EditText passwordText;
 	private Button signInButton;
+	private Button signUpButton;
+	private SignInButton googleButton;
 	private EditText confPass;
 
 	private TextView emailReqText;
@@ -63,6 +66,8 @@ public class LoginActivity extends AppCompatActivity {
 			blankEmail(false);
 
 			if (!emailText.getText().toString().isEmpty() && !passwordText.getText().toString().isEmpty()) {
+
+				disableButtons(true);
 
 				mAuth.signInWithEmailAndPassword(emailText.getText().toString(), passwordText.getText().toString())
 						.addOnCompleteListener(LoginActivity.this, new OnCompleteListener<AuthResult>() {
@@ -96,6 +101,8 @@ public class LoginActivity extends AppCompatActivity {
 									}
 									Log.i("ERROR", task.getException().toString());
 								}
+
+								disableButtons(false);
 							}
 						});
 			} else {
@@ -152,6 +159,8 @@ public class LoginActivity extends AppCompatActivity {
 		emailText = findViewById(R.id.emailText);
 		passwordText = findViewById(R.id.passwordText);
 		signInButton = findViewById(R.id.signIn);
+		signUpButton = findViewById(R.id.signUp);
+		googleButton = findViewById(R.id.googleButton);
 		confPass = findViewById(R.id.confPassText);
 
 		intent = new Intent(this, MainActivity.class);
@@ -179,10 +188,11 @@ public class LoginActivity extends AppCompatActivity {
 		}
 
 		//Google Button OnclickListener
-		findViewById(R.id.googleButton).setOnClickListener(new View.OnClickListener() {
+		googleButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				Intent signInIntent = mGoogleSignInClient.getSignInIntent();
+				disableButtons(true);
 				startActivityForResult(signInIntent, RC_SIGN_IN);
 			}
 		});
@@ -239,6 +249,12 @@ public class LoginActivity extends AppCompatActivity {
 		mAuth.signOut();
 	}
 
+	private void disableButtons(boolean bool) {
+		signUpButton.setEnabled(!bool);
+		signInButton.setEnabled(!bool);
+		googleButton.setEnabled(!bool);
+	}
+
 	//SignUp
 	public void signUpClicked(View view) {
 
@@ -261,6 +277,8 @@ public class LoginActivity extends AppCompatActivity {
 
 			if (!passwordText.getText().toString().isEmpty() && !emailText.getText().toString().isEmpty()) {
 				if (passwordText.getText().toString().equals(confPass.getText().toString())) {
+
+					disableButtons(true);
 
 					mAuth.createUserWithEmailAndPassword(emailText.getText().toString(), passwordText.getText().toString())
 							.addOnCompleteListener(LoginActivity.this, new OnCompleteListener<AuthResult>() {
@@ -294,6 +312,8 @@ public class LoginActivity extends AppCompatActivity {
 											e.printStackTrace();
 										}
 									}
+
+									disableButtons(false);
 								}
 							});
 				} else {
@@ -339,11 +359,15 @@ public class LoginActivity extends AppCompatActivity {
 				// Signed in successfully, show authenticated UI.
 				if (account != null) {
 					firebaseAuthWithGoogle(account);
+				} else {
+					disableButtons(false);
 				}
 			} catch (ApiException e) {
 				// The ApiException status code indicates the detailed failure reason.
 				// Please refer to the GoogleSignInStatusCodes class reference for more information.
 				Log.w("Failed", "signInResult:failed code=" + e.getStatusCode());
+
+				disableButtons(false);
 
 			}
 		}
@@ -372,6 +396,8 @@ public class LoginActivity extends AppCompatActivity {
 							Toast.makeText(LoginActivity.this, "LOGIN FAILED", Toast.LENGTH_SHORT).show();
 							Log.w("Failed", "signInWithCredential:failure", task.getException());
 						}
+
+						disableButtons(false);
 					}
 				});
 	}
