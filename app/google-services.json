@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "151654450292",
+    "firebase_url": "https://shared-clipboard-a312e.firebaseio.com",
+    "project_id": "shared-clipboard-a312e",
+    "storage_bucket": "shared-clipboard-a312e.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:151654450292:android:230c2e0a6f1b01e0573d21",
+        "android_client_info": {
+          "package_name": "com.fade.sharedclipboard"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "151654450292-0f1r6a00d6mk480s15un8mjmt2tc5vm8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.fade.sharedclipboard",
+            "certificate_hash": "9f72c6d6c7ad8f4905dfb750fb944afb8d983062"
+          }
+        },
+        {
+          "client_id": "151654450292-rhiplsttgl2v9lil5o9og63tic8t18iq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBjuF230Su0rHNmsRgHkF4o5bsbZcK5VsM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "151654450292-rhiplsttgl2v9lil5o9og63tic8t18iq.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
