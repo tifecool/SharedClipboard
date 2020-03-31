@@ -13,6 +13,7 @@
     <string name="save">Save</string>
     <string name="shared_clipboard">Shared Clipboard</string>
     <string name="share">Share To Devices</string>
+    <string name="shared">Shared Successfully</string>
     <string name="indicator">Indicator</string>
     <string name="saved">SAVED!</string>
     <string name="empty_editbox">No Content To Save</string>

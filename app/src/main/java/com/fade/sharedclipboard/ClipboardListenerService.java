@@ -72,7 +72,6 @@ public class ClipboardListenerService extends Service {
 					.setContentText("Running")
 					.setContentIntent(notifyPendingIntent)
 					.setSmallIcon(R.drawable.demo_icon)
-					//.addAction(R.drawable.ic_search,"Search",searchAction())
 					.build();
 
 			//Prevents Service from dying
@@ -102,7 +101,6 @@ public class ClipboardListenerService extends Service {
 				.setCategory(Notification.CATEGORY_SERVICE)
 				.setContentIntent(notifyPendingIntent)
 				.setSmallIcon(R.drawable.demo_icon)
-				//.addAction(R.drawable.ic_search,"Search", searchAction() )
 				.build();
 
 		//Prevents service from dying
@@ -149,13 +147,34 @@ public class ClipboardListenerService extends Service {
 
 	private PendingIntent searchAction() {
 
-		Intent intent = new Intent(Intent.ACTION_WEB_SEARCH);
-		intent.putExtra(SearchManager.QUERY, getCurrentClip());
-		intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-		Log.d("SEARCH ACTION RAN", "searchAction: " + getCurrentClip());
+		String currentClip = getCurrentClip();
 
-		return PendingIntent.getActivity(
-				this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+		if (currentClip.length() > 3000) {
+			currentClip = currentClip.substring(0, 3000);
+		}
+
+		Intent intent = new Intent(Intent.ACTION_WEB_SEARCH);
+		intent.putExtra(SearchManager.QUERY, currentClip);
+		intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+		Log.d("SEARCH ACTION RAN", "searchAction: " + currentClip);
+
+		return PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+	}
+
+	private PendingIntent shareAction() {
+
+		String currentClip = getCurrentClip();
+
+		if (currentClip.length() > 3000) {
+			currentClip = currentClip.substring(0, 3000);
+		}
+
+		Intent intent = new Intent(this, ShareActionIntentService.class);
+		intent.setAction(ShareActionIntentService.SHARE)
+				.putExtra(ShareActionIntentService.CURRENT_CLIP_DATA, currentClip);
+		Log.d("SHARE RAN", "shareAction: " + currentClip);
+
+		return PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
 	}
 
 	private void copiedNotification() {
@@ -189,16 +208,15 @@ public class ClipboardListenerService extends Service {
 
 			if (above150) {
 				if (currentClipContent.length() > 3000) {
-					copiedNotify = copiedNotifyBuilder.setSubText(getString(R.string.text_limit))
-							.build();
+					copiedNotifyBuilder.setSubText(getString(R.string.text_limit));
 				} else {
-					copiedNotify = copiedNotifyBuilder.setSubText(getString(R.string.search_limit))
-							.build();
+					copiedNotifyBuilder.setSubText(getString(R.string.search_limit));
 				}
 			} else {
-				copiedNotify = copiedNotifyBuilder.addAction(R.drawable.ic_search, getString(R.string.search), searchAction())
-						.build();
+				copiedNotifyBuilder.addAction(R.drawable.ic_search, getString(R.string.search), searchAction());
 			}
+
+			copiedNotify = copiedNotifyBuilder.addAction(R.drawable.ic_share, getString(R.string.share), shareAction()).build();
 
 		} else {
 
@@ -220,16 +238,14 @@ public class ClipboardListenerService extends Service {
 
 			if (above150) {
 				if (currentClipContent.length() > 3000) {
-					copiedNotify = copiedNotifyBuilder.setSubText(getString(R.string.text_limit))
-							.build();
+					copiedNotifyBuilder.setSubText(getString(R.string.text_limit));
 				} else {
-					copiedNotify = copiedNotifyBuilder.setSubText(getString(R.string.search_limit))
-							.build();
+					copiedNotifyBuilder.setSubText(getString(R.string.search_limit));
 				}
 			} else {
-				copiedNotify = copiedNotifyBuilder.addAction(R.drawable.ic_search, getString(R.string.search), searchAction())
-						.build();
+				copiedNotifyBuilder.addAction(R.drawable.ic_search, getString(R.string.search), searchAction());
 			}
+			copiedNotify = copiedNotifyBuilder.addAction(R.drawable.ic_share, getString(R.string.share), shareAction()).build();
 		}
 
 		manager.notify(1, copiedNotify);

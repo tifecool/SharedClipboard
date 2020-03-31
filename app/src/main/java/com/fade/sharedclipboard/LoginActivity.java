@@ -177,7 +177,7 @@ public class LoginActivity extends AppCompatActivity {
 		mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
 
 		Intent intent = getIntent();
-		if (intent.getBooleanExtra(MainActivity.main_activity_intent, false)) {
+		if (intent.getBooleanExtra(MainActivity.MAIN_ACTIVITY_INTENT, false)) {
 			mGoogleSignInClient.signOut();
 		}
 

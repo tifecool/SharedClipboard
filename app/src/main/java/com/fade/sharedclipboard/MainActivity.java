@@ -55,16 +55,12 @@ import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
 
-	/*TODO:
-			 UPDATE APP SCREEN INCASE OF ANY ISSUES AND UPDATE NEEDED!
-	 */
-	//public static final String LAST_INT = "lastInt";
-	public static final String LAST_UUID = "lastUUID";
-	public static final String main_activity_intent = "MAIN_ACTIVITY";
-
 	public static final float APP_VERSION = (float) 1.0;
 
-	private static FirebaseUser currentUser;
+	public static final String LAST_UUID = "lastUUID";
+	public static final String MAIN_ACTIVITY_INTENT = "MAIN_ACTIVITY";
+
+	public static FirebaseUser currentUser;
 	private static DatabaseReference savedClipRef;
 	private static DatabaseReference deletedClipRef;
 
@@ -499,7 +495,7 @@ public class MainActivity extends AppCompatActivity {
 	public void logoutClicked(View view) {
 		FirebaseAuth.getInstance().signOut();
 		Intent intent = new Intent(MainActivity.this, LoginActivity.class);
-		intent.putExtra(main_activity_intent, true);
+		intent.putExtra(MAIN_ACTIVITY_INTENT, true);
 		sharedPreferences.edit().putString(LAST_UUID, currentUser.getUid()).apply();
 		startActivity(intent);
 
