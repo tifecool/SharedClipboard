@@ -97,6 +97,8 @@ public class LoginActivity extends AppCompatActivity {
 										emailText.requestFocus();
 
 									} catch (Exception e) {
+										Toast.makeText(LoginActivity.this, R.string.login_failed, Toast.LENGTH_SHORT).show();
+										Log.w("Failed", "signInWithCredential:failure");
 										e.printStackTrace();
 									}
 									Log.i("ERROR", task.getException().toString());
@@ -309,6 +311,8 @@ public class LoginActivity extends AppCompatActivity {
 											emailText.requestFocus();
 
 										} catch (Exception e) {
+											Toast.makeText(LoginActivity.this, R.string.signup_failed, Toast.LENGTH_SHORT).show();
+											Log.w("Failed", "signInWithCredential:failure");
 											e.printStackTrace();
 										}
 									}
@@ -365,7 +369,8 @@ public class LoginActivity extends AppCompatActivity {
 			} catch (ApiException e) {
 				// The ApiException status code indicates the detailed failure reason.
 				// Please refer to the GoogleSignInStatusCodes class reference for more information.
-				Log.w("Failed", "signInResult:failed code=" + e.getStatusCode());
+				Toast.makeText(LoginActivity.this, R.string.login_failed, Toast.LENGTH_SHORT).show();
+				Log.w("Failed", "signInWithCredential:failure");
 
 				disableButtons(false);
 
@@ -393,7 +398,7 @@ public class LoginActivity extends AppCompatActivity {
 							finish();
 						} else {
 							// If sign in fails, display a message to the user.
-							Toast.makeText(LoginActivity.this, "LOGIN FAILED", Toast.LENGTH_SHORT).show();
+							Toast.makeText(LoginActivity.this, R.string.login_failed, Toast.LENGTH_SHORT).show();
 							Log.w("Failed", "signInWithCredential:failure", task.getException());
 						}
 

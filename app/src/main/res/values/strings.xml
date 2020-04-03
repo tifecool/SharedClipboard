@@ -31,6 +31,8 @@
     <string name="profile_pic">Profile Pic</string>
     <string name="new_clip">New Clip</string>
     <string name="failed_to_upload">Failed To Upload Current Clip</string>
+    <string name="login_failed">Login Failed</string>
+    <string name="signup_failed">Sign-up Failed</string>
     <string name="search">Search</string>
     <string name="delete">Delete</string>
     <string name="edit">Edit</string>
