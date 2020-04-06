@@ -394,71 +394,140 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	//Uploading to Firebase Database
-	public static void sync(Long unixTime) {
+	public static void sync(final Long unixTime) {
 
 		//Sync of SavedClips
-		SQLiteStatement statement =
+		final SQLiteStatement statement =
 				database.compileStatement("UPDATE SavedClips SET UnixTimeLastSynced = ?, Synced = 1 WHERE Synced = 0");
 		Log.d("SYNCED", "SYNCED");
 
-		while (MainActivity.unixTime.contains((long) 0)) {
-			int i = MainActivity.unixTime.indexOf((long) 0);
+		final ArrayList<String> onlineClipIDs = new ArrayList<>();
 
-			MainActivity.unixTime.add(i, unixTime);
-			MainActivity.unixTime.remove(i + 1);
+		savedClipRef.addListenerForSingleValueEvent(new ValueEventListener() {
+			@Override
+			public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
-			DatabaseReference currentClip = savedClipRef.child(savedClipID.get(i));
-			currentClip.child("content").setValue(savedClipContents.get(i));
-			currentClip.child("title").setValue(savedClipTitles.get(i));
-			currentClip.child("unix time").setValue(MainActivity.unixTime.get(i));
+				for (DataSnapshot savedClip : dataSnapshot.getChildren()) {
+					onlineClipIDs.add(savedClip.getKey());
+				}
 
-			syncedBoolean.add(i, 1);
-			syncedBoolean.remove(i + 1);
+				while (MainActivity.unixTime.contains((long) 0)) {
+
+					int i = MainActivity.unixTime.indexOf((long) 0);
+
+					if (onlineClipIDs.contains(savedClipID.get(i))) {
+						String id = UUID.randomUUID().toString();
+
+						SQLiteStatement updateStatement =
+								database.compileStatement("UPDATE SavedClips SET id = ? WHERE id = ?");
+
+						updateStatement.bindString(1, id);
+						updateStatement.bindString(2, savedClipID.get(i));
+						updateStatement.execute();
+						savedClipID.remove(i);
+						savedClipID.add(i, id);
+					}
 
 
-		}
+					MainActivity.unixTime.add(i, unixTime);
+					MainActivity.unixTime.remove(i + 1);
 
-		statement.bindLong(1, unixTime);
-		statement.execute();
-		savedClipAdapter.notifyDataSetChanged();
+					DatabaseReference currentClip = savedClipRef.child(savedClipID.get(i));
+
+					currentClip.child("content").setValue(savedClipContents.get(i));
+					currentClip.child("title").setValue(savedClipTitles.get(i));
+					currentClip.child("unix time").setValue(MainActivity.unixTime.get(i));
+
+					syncedBoolean.add(i, 1);
+					syncedBoolean.remove(i + 1);
+
+
+				}
+
+				statement.bindLong(1, unixTime);
+				statement.execute();
+				savedClipAdapter.notifyDataSetChanged();
+
+			}
+
+			@Override
+			public void onCancelled(@NonNull DatabaseError databaseError) {
+
+			}
+		});
 
 
 		//Sync of DeletedClips
-		SQLiteStatement deletedStatement =
+		final SQLiteStatement deletedStatement =
 				database.compileStatement("UPDATE DeletedClips SET UnixTimeLastSynced = ?, Synced = 1 WHERE Synced = 0");
 
-		while (dUnixTime.contains((long) 0)) {
-			final int i = dUnixTime.indexOf((long) 0);
 
-			dUnixTime.add(i, unixTime);
-			dUnixTime.remove(i + 1);
+		final ArrayList<String> dOnlineClipIDs = new ArrayList<>();
 
-			savedClipRef.addListenerForSingleValueEvent(new ValueEventListener() {
-				@Override
-				public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-					if (dataSnapshot.hasChild(dSavedClipID.get(i))) {
-						savedClipRef.child(dSavedClipID.get(i)).removeValue();
+		deletedClipRef.addListenerForSingleValueEvent(new ValueEventListener() {
+			@Override
+			public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+
+				for (DataSnapshot deletedClip : dataSnapshot.getChildren()) {
+					dOnlineClipIDs.add(deletedClip.getKey());
+				}
+
+
+				while (dUnixTime.contains((long) 0)) {
+					final int i = dUnixTime.indexOf((long) 0);
+
+					if (dOnlineClipIDs.contains(dSavedClipID.get(i))) {
+						String id = UUID.randomUUID().toString();
+
+						SQLiteStatement updateStatement =
+								database.compileStatement("UPDATE DeletedClips SET id = ? WHERE id = ?");
+
+						updateStatement.bindString(1, id);
+						updateStatement.bindString(2, dSavedClipID.get(i));
+						updateStatement.execute();
+						dSavedClipID.remove(i);
+						dSavedClipID.add(i, id);
 					}
+
+					dUnixTime.add(i, unixTime);
+					dUnixTime.remove(i + 1);
+
+					savedClipRef.addListenerForSingleValueEvent(new ValueEventListener() {
+						@Override
+						public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+							if (dataSnapshot.hasChild(dSavedClipID.get(i))) {
+								savedClipRef.child(dSavedClipID.get(i)).removeValue();
+							}
+						}
+
+						@Override
+						public void onCancelled(@NonNull DatabaseError databaseError) {
+
+						}
+					});
+
+
+					DatabaseReference currentClip = deletedClipRef.child(dSavedClipID.get(i));
+					currentClip.child("content").setValue(dSavedClipContents.get(i));
+					currentClip.child("title").setValue(dSavedClipTitles.get(i));
+					currentClip.child("unix time").setValue(dUnixTime.get(i));
+
+					dSyncedBoolean.add(i, 1);
+					dSyncedBoolean.remove(i + 1);
+
+					deletedStatement.bindLong(1, unixTime);
+					deletedStatement.execute();
+
 				}
 
-				@Override
-				public void onCancelled(@NonNull DatabaseError databaseError) {
 
-				}
-			});
+			}
 
-			DatabaseReference currentClip = deletedClipRef.child(dSavedClipID.get(i));
-			currentClip.child("content").setValue(dSavedClipContents.get(i));
-			currentClip.child("title").setValue(dSavedClipTitles.get(i));
-			currentClip.child("unix time").setValue(dUnixTime.get(i));
+			@Override
+			public void onCancelled(@NonNull DatabaseError databaseError) {
 
-			dSyncedBoolean.add(i, 1);
-			dSyncedBoolean.remove(i + 1);
-
-		}
-		deletedStatement.bindLong(1, unixTime);
-		deletedStatement.execute();
-
+			}
+		});
 	}
 
 	public void indicatorClicked(View view) {
@@ -581,7 +650,7 @@ public class MainActivity extends AppCompatActivity {
 
 									syncedBoolean.add(i + 1, 1);
 									unixTime.add(i + 1, (long) savedClip.child("unix time").getValue());
-									savedClipID.add(i + 1, id);
+									savedClipID.add(i + 1, savedClip.getKey());
 									savedClipContents.add(i + 1, savedClip.child("content").getValue().toString());
 									savedClipTitles.add(i + 1, savedClip.child("title").getValue().toString());
 								} else {
@@ -709,7 +778,7 @@ public class MainActivity extends AppCompatActivity {
 
 									dSyncedBoolean.add(i + 1, 1);
 									dUnixTime.add(i + 1, (long) deletedClip.child("unix time").getValue());
-									dSavedClipID.add(i + 1, id);
+									dSavedClipID.add(i + 1, deletedClip.getKey());
 									dSavedClipContents.add(i + 1, deletedClip.child("content").getValue().toString());
 									dSavedClipTitles.add(i + 1, deletedClip.child("title").getValue().toString());
 								} else {
