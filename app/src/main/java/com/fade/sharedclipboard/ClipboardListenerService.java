@@ -11,12 +11,21 @@ import android.content.ClipDescription;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 public class ClipboardListenerService extends Service {
 
@@ -25,13 +34,20 @@ public class ClipboardListenerService extends Service {
 
 	public static final String FOREGROUND_CHANNEL = "Clipboard.foreground.notification";
 	public static final String COPIED_CHANNEL = "Clipboard.copied.notification";
+	public static final String ONLINE_CHANNEL = "Clipboard.online.notification";
 	private NotificationManager manager;
 	private PendingIntent notifyPendingIntent;
+	private static Boolean fromDatabase = false;
+	private static Boolean fromDevice = false;
 
 
 	@Override
 	public void onCreate() {
 		super.onCreate();
+
+		FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+
+		final SharedPreferences sharedPreferences = this.getSharedPreferences("LastUser", MODE_PRIVATE);
 
 		StartService.killedProg = false;
 		Intent notifyIntent = new Intent(this, MainActivity.class);
@@ -56,11 +72,34 @@ public class ClipboardListenerService extends Service {
 					Log.i("Clipboard ", item.getText().toString());
 					//Toast.makeText(ClipboardListenerService.this, item.getText().toString(), Toast.LENGTH_SHORT).show();
 					setCurrentClip(item.getText().toString());
-					if (!ActivityVisibility.isActivityVisible())
+					if (!ActivityVisibility.isActivityVisible() && !fromDatabase)
 						copiedNotification();
+
+					fromDatabase = false;
 				}
 			}
 		};
+
+		if (currentUser != null) {
+			FirebaseDatabase.getInstance().getReference().child("users").child(currentUser.getUid()).child("current clip").addValueEventListener(new ValueEventListener() {
+				@Override
+				public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+					try {
+						setCurrentClip(dataSnapshot.getValue().toString());
+						if (!ActivityVisibility.isActivityVisible() && !fromDevice)
+							currentClipUpdatedNotification();
+						fromDevice = false;
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+
+				@Override
+				public void onCancelled(@NonNull DatabaseError databaseError) {
+					setCurrentClip(sharedPreferences.getString("CURRENT_CLIP", ""));
+				}
+			});
+		}
 
 		if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O)
 			startOreoAboveForeground();
@@ -76,7 +115,7 @@ public class ClipboardListenerService extends Service {
 
 			//Prevents Service from dying
 			notificationLowSdk.flags = notificationLowSdk.flags | Notification.FLAG_NO_CLEAR;
-			startForeground(1, notificationLowSdk);
+			startForeground(2, notificationLowSdk);
 
 		}
 
@@ -141,6 +180,14 @@ public class ClipboardListenerService extends Service {
 		currentClip = clip;
 	}
 
+	public void setFromDatabase(boolean bool) {
+		fromDatabase = bool;
+	}
+
+	public void setFromDevice(boolean bool) {
+		fromDevice = bool;
+	}
+
 	public String getCurrentClip() {
 		return currentClip;
 	}
@@ -199,7 +246,7 @@ public class ClipboardListenerService extends Service {
 
 			NotificationCompat.Builder copiedNotifyBuilder = new NotificationCompat.Builder(this, COPIED_CHANNEL);
 			copiedNotifyBuilder
-					.setContentTitle("New Clip")
+					.setContentTitle(getString(R.string.new_clip))
 					.setContentText(currentClipContent)
 					.setPriority(NotificationManager.IMPORTANCE_HIGH)
 					.setCategory(Notification.CATEGORY_EVENT)
@@ -249,5 +296,75 @@ public class ClipboardListenerService extends Service {
 		}
 
 		manager.notify(1, copiedNotify);
+	}
+
+	private void currentClipUpdatedNotification() {
+
+		Notification onlineNotify;
+
+		if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
+
+			String onlineNotificationName = "Online Notification";
+			NotificationChannel chan2 = new NotificationChannel(ONLINE_CHANNEL, onlineNotificationName, NotificationManager.IMPORTANCE_HIGH);
+			chan2.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+			manager.createNotificationChannel(chan2);
+
+			String currentClipContent = getCurrentClip();
+
+			if (currentClipContent.length() > 150) {
+				currentClipContent = currentClipContent.substring(0, 150);
+				currentClipContent = currentClipContent.concat("...");
+			}
+
+			NotificationCompat.Builder copiedNotifyBuilder = new NotificationCompat.Builder(this, COPIED_CHANNEL);
+			copiedNotifyBuilder
+					.setContentTitle(getString(R.string.new_clip))
+					.setContentText(currentClipContent)
+					.setPriority(NotificationManager.IMPORTANCE_HIGH)
+					.setCategory(Notification.CATEGORY_EVENT)
+					.setContentIntent(notifyPendingIntent)
+					.setSmallIcon(R.drawable.demo_icon)
+					.addAction(R.drawable.ic_search, getString(R.string.copy), copyAction());
+
+			onlineNotify = copiedNotifyBuilder.build();
+
+		} else {
+
+			String currentClipContent = getCurrentClip();
+
+			if (currentClipContent.length() > 150) {
+				currentClipContent = currentClipContent.substring(0, 150);
+				currentClipContent = currentClipContent.concat("...");
+			}
+
+			NotificationCompat.Builder copiedNotifyBuilder = new NotificationCompat.Builder(this, COPIED_CHANNEL);
+			copiedNotifyBuilder
+					.setContentTitle(getString(R.string.new_clip))
+					.setContentText(currentClipContent)
+					.setContentIntent(notifyPendingIntent)
+					.setSmallIcon(R.drawable.demo_icon)
+					.addAction(R.drawable.ic_search, getString(R.string.copy), copyAction());
+
+			onlineNotify = copiedNotifyBuilder.build();
+		}
+
+		manager.notify(1, onlineNotify);
+
+	}
+
+	private PendingIntent copyAction() {
+
+		String currentClip = getCurrentClip();
+
+		if (currentClip.length() > 3000) {
+			currentClip = currentClip.substring(0, 3000);
+		}
+
+		Intent intent = new Intent(this, ShareActionIntentService.class);
+		intent.setAction(ShareActionIntentService.COPY)
+				.putExtra(ShareActionIntentService.CURRENT_CLIP_DATA, currentClip);
+		Log.d("COPY RAN", "CopyAction: " + currentClip);
+
+		return PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
 	}
 }

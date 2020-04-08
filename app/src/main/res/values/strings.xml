@@ -39,9 +39,11 @@
     <string name="delete_conf">Delete?</string>
     <string name="delete_conf_message">Are you sure you want to delete these clips?</string>
     <string name="content">Content</string>
-    <string name="copied">Copied to Clipboard!</string>
+    <string name="copied">Copied to Clipboard</string>
     <string name="text_limit">Text Limit Reached (3000 characters)</string>
     <string name="search_limit">Search Limit Reached (150 characters)</string>
     <string name="warning_symbol">Warning Symbol</string>
     <string name="please_update_app">Please Update App</string>
+    <string name="database_update">Current clip updated from database</string>
+    <string name="copy">Copy</string>
 </resources>

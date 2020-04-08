@@ -278,6 +278,24 @@ public class MainActivity extends AppCompatActivity {
 					}
 			);
 
+			FirebaseDatabase.getInstance().getReference().child("users").child(currentUser.getUid()).child("current clip").addValueEventListener(new ValueEventListener() {
+				@Override
+				public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+
+					try {
+						editText.setText(dataSnapshot.getValue().toString());
+						sharedPreferences.edit().putString("CURRENT_CLIP", dataSnapshot.getValue().toString()).apply();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+
+				@Override
+				public void onCancelled(@NonNull DatabaseError databaseError) {
+					editText.setText(sharedPreferences.getString("CURRENT_CLIP", ""));
+				}
+			});
+
 			//Put current user in shared preference
 			sharedPreferences.edit().putString(LAST_UUID, currentUser.getUid()).apply();
 		}
@@ -304,24 +322,6 @@ public class MainActivity extends AppCompatActivity {
 			editText.setText(clipboardListenerObj.getCurrentClip());
 			sharedPreferences.edit().putString("CURRENT_CLIP", clipboardListenerObj.getCurrentClip()).apply();
 		}
-
-		FirebaseDatabase.getInstance().getReference().child("users").child(currentUser.getUid()).child("current clip").addValueEventListener(new ValueEventListener() {
-			@Override
-			public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-
-				try {
-					editText.setText(dataSnapshot.getValue().toString());
-					sharedPreferences.edit().putString("CURRENT_CLIP", dataSnapshot.getValue().toString()).apply();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-
-			@Override
-			public void onCancelled(@NonNull DatabaseError databaseError) {
-				editText.setText(sharedPreferences.getString("CURRENT_CLIP", ""));
-			}
-		});
 
 		syncButtonClicked(findViewById(R.id.syncImage));
 
@@ -1146,8 +1146,6 @@ public class MainActivity extends AppCompatActivity {
 			}
 		}
 	}
-
-
 }
 
 
