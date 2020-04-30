@@ -1,6 +1,19 @@
 package com.fade.sharedclipboard;
 
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
+import android.os.Build;
+import android.provider.Settings;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.ImageView;
+
+import androidx.appcompat.app.AlertDialog;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -10,40 +23,70 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import static com.fade.sharedclipboard.MainActivity.DONT_SHOW_CHECK;
+
 class Utils {
 
-/*
-	public static class PageDownloader extends AsyncTask<String, Void, String> {
+	static void openPowerSettings(LayoutInflater layoutInflater, final SharedPreferences sharedPreferences, final Context context) {
+		final int[] bat_counter = {0};
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 
+			final View view = layoutInflater.inflate(R.layout.power_settings_dialogue, null);
+			final ImageView batImage = view.findViewById(R.id.batImage);
+			final CheckBox checkBox = view.findViewById(R.id.checkBox);
+			checkBox.setChecked(sharedPreferences.getBoolean(DONT_SHOW_CHECK, false));
 
-		@Override
-		protected String doInBackground(String... urls) {
-			StringBuilder string = new StringBuilder();
+			batImage.setImageResource(R.drawable.battery_opti_1);
 
-			try {
+			AlertDialog.Builder alertBuild = new AlertDialog.Builder(context)
+					.setView(view)
+					.setTitle(R.string.bat_opti)
+					.setNegativeButton(R.string.cancel, null)
+					.setPositiveButton(R.string.next, null);
 
-				URL url = new URL(urls[0]);
-				HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-				InputStream is = connection.getInputStream();
-				InputStreamReader reader = new InputStreamReader(is);
-				int maxBytesToRead = 400; //no of bytes read at once
-				char[] currentChars = new char[maxBytesToRead]; // Array holds currently read bytes
-				int data = reader.read(currentChars);//Stores bytes in array
+			final AlertDialog alert = alertBuild.create();
+			alert.show();
 
-				while (data != -1) {
-					string.append(currentChars,0,data);//adds bytes to string, no offset, how many chars to be added
-					data = reader.read(currentChars);
-
+			alert.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
+				@Override
+				public void onClick(View v) {
+					switch (bat_counter[0]) {
+						case 0:
+							batImage.setImageResource(R.drawable.battery_opti_2);
+							bat_counter[0]++;
+							break;
+						case 1:
+							batImage.setImageResource(R.drawable.battery_opti_3_3);
+							alert.getButton(DialogInterface.BUTTON_POSITIVE).setText(R.string.done);
+							alert.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
+								@Override
+								public void onClick(View v) {
+									Intent intent = new Intent();
+									intent.setAction(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
+									context.startActivity(intent);
+									alert.dismiss();
+								}
+							});
+							bat_counter[0]++;
+							break;
+						default:
+							bat_counter[0] = 0;
+							break;
+					}
 				}
+			});
 
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-
-			return string.toString();
+			checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+				@Override
+				public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+					sharedPreferences.edit().putBoolean(DONT_SHOW_CHECK, isChecked).apply();
+					if (isChecked) {
+						alert.dismiss();
+					}
+				}
+			});
 		}
 	}
-*/
 
 	public static class UnixTimeDownloader extends AsyncTask<String, Void, String> {
 
@@ -127,6 +170,10 @@ class Utils {
 	}
 */
 
+/*Toast toast = Toast.makeText(MainActivity.this, userEmail, Toast.LENGTH_SHORT);
+		toast.setGravity(Gravity.TOP, view.getLeft() - view.getWidth() / 2 - toast.getView().getWidth() / 2, view.getBottom());
+		toast.show();*/
+
 	/*private boolean sqlIsEmpty(SQLiteDatabase database, String tableName) {
 
 		Cursor mcursor = database.rawQuery("SELECT count(*) FROM " + tableName, null);
@@ -154,6 +201,39 @@ class Utils {
 		}
 		return super.dispatchTouchEvent(ev);
 	}*/
+
+	/*
+	public static class PageDownloader extends AsyncTask<String, Void, String> {
+
+
+		@Override
+		protected String doInBackground(String... urls) {
+			StringBuilder string = new StringBuilder();
+
+			try {
+
+				URL url = new URL(urls[0]);
+				HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+				InputStream is = connection.getInputStream();
+				InputStreamReader reader = new InputStreamReader(is);
+				int maxBytesToRead = 400; //no of bytes read at once
+				char[] currentChars = new char[maxBytesToRead]; // Array holds currently read bytes
+				int data = reader.read(currentChars);//Stores bytes in array
+
+				while (data != -1) {
+					string.append(currentChars,0,data);//adds bytes to string, no offset, how many chars to be added
+					data = reader.read(currentChars);
+
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return string.toString();
+		}
+	}
+*/
 }
 
 

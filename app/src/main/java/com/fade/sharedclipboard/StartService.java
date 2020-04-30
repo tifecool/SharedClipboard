@@ -8,20 +8,23 @@ import android.util.Log;
 
 public class StartService extends BroadcastReceiver {
 
-		@Override
-		public void onReceive(Context context, Intent intent) {
+	@Override
+	public void onReceive(Context context, Intent intent) {
 
-			if (!killedProg) {
-				Log.i("Receiver", "Recieved");
-				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-					context.startForegroundService(new Intent(context, ClipboardListenerService.class));
-				} else {
-					context.startService(new Intent(context, ClipboardListenerService.class));
-				}
+		if (!killedProg) {
+			Log.i("Receiver", "Recieved");
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+				context.startForegroundService(new Intent(context, ClipboardListenerService.class));
+			} else {
+				context.startService(new Intent(context, ClipboardListenerService.class));
 			}
 
+		} else {
+			killedProg = false;
 		}
 
-		public static boolean killedProg;
+	}
+
+	public static boolean killedProg;
 
 }

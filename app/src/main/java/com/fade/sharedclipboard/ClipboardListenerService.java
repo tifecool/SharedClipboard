@@ -19,6 +19,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
+import androidx.preference.PreferenceManager;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -26,6 +27,8 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+
+import static com.fade.sharedclipboard.MainActivity.APP_SHARED_PREF;
 
 public class ClipboardListenerService extends Service {
 
@@ -39,17 +42,24 @@ public class ClipboardListenerService extends Service {
 	private PendingIntent notifyPendingIntent;
 	private static Boolean fromDatabase = false;
 	private static Boolean fromDevice = false;
+	public static FirebaseUser currentUser;
+	CurrentClip currentClip;
+	SharedPreferences settingsSharedPref;
 
 
 	@Override
 	public void onCreate() {
 		super.onCreate();
 
-		FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+		currentClip = new CurrentClip();
+		/*Context context = this;
+		currentClipListener = (CurrentClipListener) context;*/
 
-		final SharedPreferences sharedPreferences = this.getSharedPreferences("LastUser", MODE_PRIVATE);
+		currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
-		StartService.killedProg = false;
+		final SharedPreferences sharedPreferences = this.getSharedPreferences(APP_SHARED_PREF, MODE_PRIVATE);
+		settingsSharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+
 		Intent notifyIntent = new Intent(this, MainActivity.class);
 		// Set the Activity to start in a new, empty task
 		notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -71,8 +81,8 @@ public class ClipboardListenerService extends Service {
 
 					Log.i("Clipboard ", item.getText().toString());
 					//Toast.makeText(ClipboardListenerService.this, item.getText().toString(), Toast.LENGTH_SHORT).show();
-					setCurrentClip(item.getText().toString());
-					if (!ActivityVisibility.isActivityVisible() && !fromDatabase)
+					CurrentClip.setCurrentClip(item.getText().toString());
+					if (!ActivityVisibility.isActivityVisible() && !fromDatabase && settingsSharedPref.getBoolean("copied_notification_pref", true))
 						copiedNotification();
 
 					fromDatabase = false;
@@ -85,8 +95,8 @@ public class ClipboardListenerService extends Service {
 				@Override
 				public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 					try {
-						setCurrentClip(dataSnapshot.getValue().toString());
-						if (!ActivityVisibility.isActivityVisible() && !fromDevice)
+						CurrentClip.setCurrentClip(dataSnapshot.getValue().toString());
+						if (!ActivityVisibility.isActivityVisible() && !fromDevice && settingsSharedPref.getBoolean("database_notification_pref", true))
 							currentClipUpdatedNotification();
 						fromDevice = false;
 					} catch (Exception e) {
@@ -96,14 +106,21 @@ public class ClipboardListenerService extends Service {
 
 				@Override
 				public void onCancelled(@NonNull DatabaseError databaseError) {
-					setCurrentClip(sharedPreferences.getString("CURRENT_CLIP", ""));
+					CurrentClip.setCurrentClip(sharedPreferences.getString("CURRENT_CLIP", ""));
 				}
 			});
 		}
 
-		if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O)
+		if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
 			startOreoAboveForeground();
-		else {
+
+			if (currentUser == null) {
+				StartService.killedProg = true;
+				stopService(new Intent(ClipboardListenerService.this, ClipboardListenerService.class));
+			} else {
+				StartService.killedProg = false;
+			}
+		} else {
 
 			NotificationCompat.Builder notificationBuilderLowSdk = new NotificationCompat.Builder(this, FOREGROUND_CHANNEL);
 			Notification notificationLowSdk = notificationBuilderLowSdk
@@ -116,6 +133,13 @@ public class ClipboardListenerService extends Service {
 			//Prevents Service from dying
 			notificationLowSdk.flags = notificationLowSdk.flags | Notification.FLAG_NO_CLEAR;
 			startForeground(2, notificationLowSdk);
+
+			if (currentUser == null) {
+				StartService.killedProg = true;
+				stopService(new Intent(ClipboardListenerService.this, ClipboardListenerService.class));
+			} else {
+				StartService.killedProg = false;
+			}
 
 		}
 
@@ -160,6 +184,7 @@ public class ClipboardListenerService extends Service {
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
+
 		clipboard.removePrimaryClipChangedListener(changedListener);
 
 		Intent broadcastIntent = new Intent(this, StartService.class);
@@ -174,12 +199,6 @@ public class ClipboardListenerService extends Service {
 		return null;
 	}
 
-	private static String currentClip;
-
-	public void setCurrentClip(String clip) {
-		currentClip = clip;
-	}
-
 	public void setFromDatabase(boolean bool) {
 		fromDatabase = bool;
 	}
@@ -188,13 +207,10 @@ public class ClipboardListenerService extends Service {
 		fromDevice = bool;
 	}
 
-	public String getCurrentClip() {
-		return currentClip;
-	}
 
 	private PendingIntent searchAction() {
 
-		String currentClip = getCurrentClip();
+		String currentClip = this.currentClip.getCurrentClip();
 
 		if (currentClip.length() > 3000) {
 			currentClip = currentClip.substring(0, 3000);
@@ -210,7 +226,7 @@ public class ClipboardListenerService extends Service {
 
 	private PendingIntent shareAction() {
 
-		String currentClip = getCurrentClip();
+		String currentClip = this.currentClip.getCurrentClip();
 
 		if (currentClip.length() > 3000) {
 			currentClip = currentClip.substring(0, 3000);
@@ -235,7 +251,7 @@ public class ClipboardListenerService extends Service {
 			chan1.setLockscreenVisibility(Notification.VISIBILITY_SECRET);
 			manager.createNotificationChannel(chan1);
 
-			String currentClipContent = getCurrentClip();
+			String currentClipContent = this.currentClip.getCurrentClip();
 			boolean above150 = false;
 
 			if (currentClipContent.length() > 150) {
@@ -267,7 +283,7 @@ public class ClipboardListenerService extends Service {
 
 		} else {
 
-			String currentClipContent = getCurrentClip();
+			String currentClipContent = this.currentClip.getCurrentClip();
 			boolean above150 = false;
 
 			if (currentClipContent.length() > 150) {
@@ -309,7 +325,7 @@ public class ClipboardListenerService extends Service {
 			chan2.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
 			manager.createNotificationChannel(chan2);
 
-			String currentClipContent = getCurrentClip();
+			String currentClipContent = this.currentClip.getCurrentClip();
 
 			if (currentClipContent.length() > 150) {
 				currentClipContent = currentClipContent.substring(0, 150);
@@ -324,13 +340,13 @@ public class ClipboardListenerService extends Service {
 					.setCategory(Notification.CATEGORY_EVENT)
 					.setContentIntent(notifyPendingIntent)
 					.setSmallIcon(R.drawable.demo_icon)
-					.addAction(R.drawable.ic_search, getString(R.string.copy), copyAction());
+					.addAction(R.drawable.ic_search, getString(R.string.copy_text), copyAction());
 
 			onlineNotify = copiedNotifyBuilder.build();
 
 		} else {
 
-			String currentClipContent = getCurrentClip();
+			String currentClipContent = this.currentClip.getCurrentClip();
 
 			if (currentClipContent.length() > 150) {
 				currentClipContent = currentClipContent.substring(0, 150);
@@ -343,7 +359,7 @@ public class ClipboardListenerService extends Service {
 					.setContentText(currentClipContent)
 					.setContentIntent(notifyPendingIntent)
 					.setSmallIcon(R.drawable.demo_icon)
-					.addAction(R.drawable.ic_search, getString(R.string.copy), copyAction());
+					.addAction(R.drawable.ic_search, getString(R.string.copy_text), copyAction());
 
 			onlineNotify = copiedNotifyBuilder.build();
 		}
@@ -354,7 +370,7 @@ public class ClipboardListenerService extends Service {
 
 	private PendingIntent copyAction() {
 
-		String currentClip = getCurrentClip();
+		String currentClip = this.currentClip.getCurrentClip();
 
 		if (currentClip.length() > 3000) {
 			currentClip = currentClip.substring(0, 3000);
@@ -367,4 +383,8 @@ public class ClipboardListenerService extends Service {
 
 		return PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
 	}
+
 }
+
+
+

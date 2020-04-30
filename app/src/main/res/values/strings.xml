@@ -1,5 +1,36 @@
 <resources>
-    <string name="app_name">SharedClipboard</string>
+
+    <!-- Notification Preferences -->
+    <string name="system_notifications">Additional options in system settings…</string>
+    <string name="database_notification_pref">New Shared Clip Notification</string>
+    <string name="database_notification_pref_sum">Notification when clip is shared from another device</string>
+    <string name="copied_notification_pref">New Copied Clip Notification</string>
+    <string name="copied_notification_pref_sum">Notification when text is copied</string>
+
+    <!-- Preferences Titles -->
+    <string name="notification_title">Notifications</string>
+    <string name="general_title">General</string>
+    <string name="deletion_title">Deletion Settings</string>
+
+    <!-- General Preferences -->
+    <string name="user_email_pref">Logged In User</string>
+    <string name="always_running_pref">Always Running</string>
+    <string name="always_running_pref_sum">Listen for copied text</string>
+    <string name="battery_optimization_pref">Battery Optimization</string>
+    <string name="battery_optimization_pref_sum">Enable for more stable app performance</string>
+
+    <!-- Deletion Preferences -->
+    <string name="thrash_pref">Thrash</string>
+    <string name="thrash_pref_sum">Deleted clips</string>
+    <string name="delete_thrash_pref">Delete Thrash</string>
+    <string name="delete_thrash_pref_sum">Permanently delete all thrash</string>
+
+    <!-- Battery Optimization -->
+    <string name="dont_show">Don\'t show this message again</string>
+    <string name="bat_opti">Battery Optimization</string>
+
+    <!-- Main App Strings -->
+    <string name="app_name">Shared Clipboard</string>
     <string name="sign_in">Sign In</string>
     <string name="sign_up">Sign Up</string>
     <string name="email">E-mail</string>
@@ -45,5 +76,11 @@
     <string name="warning_symbol">Warning Symbol</string>
     <string name="please_update_app">Please Update App</string>
     <string name="database_update">Current clip updated from database</string>
-    <string name="copy">Copy</string>
+    <string name="copy_text">Copy</string>
+    <string name="title_activity_settings">Settings</string>
+    <string name="done">Done</string>
+    <string name="next">Next</string>
+    <string name="alert_sure">Are you sure?</string>
+    <string name="accept">Accept</string>
+
 </resources>

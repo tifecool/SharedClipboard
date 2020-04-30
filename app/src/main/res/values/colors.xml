@@ -2,8 +2,10 @@
 <resources>
     <color name="colorPrimary">#008577</color>
     <color name="colorPrimaryDark">#00574B</color>
-    <color name="colorAccent">#D81B60</color>
+    <color name="colorAccent">@color/design_default_color_primary_dark</color>
+    <color name="lightBlue">@color/design_default_color_primary</color>
     <color name="selected">#C4BDBBBB</color>
     <color name="transparent">#00000000</color>
-    <color name="scGrey">#757575</color>
+    <color name="scGreyLight">#757575</color>
+    <color name="scGreyDark">#575757</color>
 </resources>

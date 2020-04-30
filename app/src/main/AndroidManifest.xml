@@ -13,9 +13,15 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+        <activity android:name=".ThrashActivity"/>
+        <activity
+            android:name=".SettingsActivity"
+            android:label="@string/title_activity_settings"
+            android:theme="@style/AppTheme.NoActionBar" />
+
         <service
             android:name=".ShareActionIntentService"
-            android:exported="false"></service>
+            android:exported="false" />
 
         <activity
             android:name=".UpdateRequiredActivity"

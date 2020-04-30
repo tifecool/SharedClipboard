@@ -9,6 +9,6 @@
     <item
         android:id="@+id/delete"
         android:title="@string/delete"
-        android:icon="@drawable/delete_black"/>
+        android:icon="@drawable/delete_white"/>
 
 </menu>

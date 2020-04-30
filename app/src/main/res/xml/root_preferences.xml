@@ -1,0 +1,65 @@
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        app:allowDividerAbove="false"
+        app:iconSpaceReserved="false"
+        app:title="@string/general_title">
+
+        <Preference
+            app:title="@string/user_email_pref"
+            app:key="logged_in_user_pref"/>
+
+        <SwitchPreference
+            app:defaultValue="true"
+            app:summary="@string/always_running_pref_sum"
+            app:title="@string/always_running_pref"
+            app:key="always_running_pref"/>
+
+        <Preference
+            app:icon="@drawable/warning_bright"
+            app:isPreferenceVisible="false"
+            app:summary="@string/battery_optimization_pref_sum"
+            app:title="@string/battery_optimization_pref"
+            app:key="battery_optimization_pref"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:allowDividerAbove="false"
+        app:iconSpaceReserved="false"
+        app:title="@string/notification_title">
+
+        <SwitchPreference
+            app:defaultValue="true"
+            app:summary="@string/copied_notification_pref_sum"
+            app:title="@string/copied_notification_pref"
+            app:key="copied_notification_pref"/>
+
+        <SwitchPreference
+            app:defaultValue="true"
+            app:summary="@string/database_notification_pref_sum"
+            app:title="@string/database_notification_pref"
+            app:key="database_notification_pref"/>
+
+        <Preference
+            app:layout="@layout/notification_preference_text"
+            app:title="@string/system_notifications"
+            app:key="notification_settings"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:allowDividerAbove="false"
+        app:iconSpaceReserved="false"
+        app:title="@string/deletion_title">
+
+        <Preference
+            app:summary="@string/thrash_pref_sum"
+            app:title="@string/thrash_pref"/>
+
+        <Preference
+            app:icon="@drawable/delete_grey"
+            app:summary="@string/delete_thrash_pref_sum"
+            app:title="@string/delete_thrash_pref" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

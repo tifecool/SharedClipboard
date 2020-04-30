@@ -2,7 +2,6 @@ package com.fade.sharedclipboard;
 
 import android.app.ActivityManager;
 import android.content.ClipData;
-import android.content.ClipDescription;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -12,12 +11,13 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 import android.graphics.Rect;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.os.PowerManager;
 import android.util.Log;
 import android.util.SparseBooleanArray;
 import android.view.ActionMode;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -38,6 +38,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.preference.PreferenceManager;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -59,6 +60,9 @@ public class MainActivity extends AppCompatActivity {
 
 	public static final String LAST_UUID = "lastUUID";
 	public static final String MAIN_ACTIVITY_INTENT = "MAIN_ACTIVITY";
+	public static final String DONT_SHOW_CHECK = "DONT_SHOW_CHECK";
+	public static final String USERS_EMAIL = "users_email";
+	public static final String APP_SHARED_PREF = "LastUser";
 
 	public static FirebaseUser currentUser;
 	private static DatabaseReference savedClipRef;
@@ -87,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
 	private DrawerLayout drawerLayout;
 	private static SQLiteDatabase database;
 	private SharedPreferences sharedPreferences;
+	private SharedPreferences settingsPreferences;
 	private Utils.UnixTimeDownloader syncRunner;
 
 	private CountDownTimer countDownTimer = new CountDownTimer(2000, 2000) {
@@ -103,6 +108,9 @@ public class MainActivity extends AppCompatActivity {
 		}
 	};
 	private ListView navList;
+	private String packageName;
+	private PowerManager pm;
+	private CurrentClip currentClip;
 
 
 	@Override
@@ -110,43 +118,70 @@ public class MainActivity extends AppCompatActivity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
+		//Find Views By Id's
+		syncImage = findViewById(R.id.syncImage);
+		pushPinImage = findViewById(R.id.pushPinImage);
+		editText = findViewById(R.id.editbox);
+		button = findViewById(R.id.saveButton);
+		drawerLayout = findViewById(R.id.drawer_layout);
+
+		/*Intent intent = new Intent();
+		intent.setAction(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
+		startActivity(intent);*/
+
 		currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
 		if (currentUser == null) {
 			startActivity(new Intent(MainActivity.this, LoginActivity.class));
+
+			StartService.killedProg = true;
+			stopService(new Intent(MainActivity.this, ClipboardListenerService.class));
+
 			finish();
 		} else {
 
-			//openPowerSettings(this);
+			currentClip = new CurrentClip();
+			currentClip.setCurrentClipListener(new CurrentClipListener() {
+				@Override
+				public void onCurrentClipChanged(String currentClip) {
+					editText.setText(currentClip);
+				}
+			});
 
+			//Database Initialization and creation
+			database = this.openOrCreateDatabase("SAVED CLIPS", MODE_PRIVATE, null);
+			sharedPreferences = this.getSharedPreferences(APP_SHARED_PREF, MODE_PRIVATE);
+			settingsPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+			packageName = this.getPackageName();
+			pm = (PowerManager) this.getSystemService(Context.POWER_SERVICE);
+
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+				if (!pm.isIgnoringBatteryOptimizations(packageName) && !sharedPreferences.getBoolean(DONT_SHOW_CHECK, false))
+					Utils.openPowerSettings(getLayoutInflater(), sharedPreferences, this);
+			}
+
+			//Firebase Database References
 			userEmail = currentUser.getEmail();
 			savedClipRef = FirebaseDatabase.getInstance().getReference().child("users").child(currentUser.getUid()).child("saved clips");
 			deletedClipRef = FirebaseDatabase.getInstance().getReference().child("users").child(currentUser.getUid()).child("deleted clips");
 
-
-			Log.d("ONCREATE RAN", "onCreate: ");
-
+			//Clearing of Arrays
 			savedClipTitles.clear();
 			savedClipContents.clear();
 			savedClipID.clear();
 			syncedBoolean.clear();
 			unixTime.clear();
 
-			//Deleted Arrays
 			dSavedClipTitles.clear();
 			dSavedClipContents.clear();
 			dSavedClipID.clear();
 			dSyncedBoolean.clear();
 			dUnixTime.clear();
 
-
 			//Creates a List adapter, List views use them to set content
 			savedClipAdapter = new CustomListAdapter(this, savedClipTitles, syncedBoolean);
 			savedClipAdapter.notifyDataSetChanged();
-
-			//Database Initialization and creation
-			database = this.openOrCreateDatabase("SAVED CLIPS", MODE_PRIVATE, null);
-			sharedPreferences = this.getSharedPreferences("LastUser", MODE_PRIVATE);
 
 			//database.execSQL("DROP TABLE IF EXISTS SavedClips");
 
@@ -159,6 +194,7 @@ public class MainActivity extends AppCompatActivity {
 
 				database.execSQL("DELETE FROM SavedClips");
 				database.execSQL("DELETE FROM DeletedClips");
+
 			} else {
 
 				//Populate saved Arrays from SQL
@@ -218,40 +254,6 @@ public class MainActivity extends AppCompatActivity {
 			//Online Database Querying
 			updateFromFirebase();
 
-			//Add clipboard listener
-			clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-
-			clipboard.addPrimaryClipChangedListener(new ClipboardManager.OnPrimaryClipChangedListener() {
-				@Override
-				public void onPrimaryClipChanged() {
-					if (clipboard.hasPrimaryClip()
-							&& clipboard.getPrimaryClipDescription().hasMimeType(
-							ClipDescription.MIMETYPE_TEXT_PLAIN)) {
-						// Get the very first item from the clip.
-						ClipData.Item item = clipboard.getPrimaryClip().getItemAt(0);
-
-						editText.setText(item.getText());
-						sharedPreferences.edit().putString("CURRENT_CLIP", item.getText().toString()).apply();
-
-					}
-				}
-			});
-
-			//Find Views By Id's
-			syncImage = findViewById(R.id.syncImage);
-			pushPinImage = findViewById(R.id.pushPinImage);
-			editText = findViewById(R.id.editbox);
-			button = findViewById(R.id.saveButton);
-			drawerLayout = findViewById(R.id.drawer_layout);
-
-			//Clipboard Service check and startup
-			ClipboardListenerService clipboardService = new ClipboardListenerService();
-			Intent serviceIntent = new Intent(this, clipboardService.getClass());
-
-			if (!serviceRunning(clipboardService.getClass())) {
-				startService(serviceIntent);
-			}
-
 			//List Creation
 			navList = findViewById(R.id.navListView);
 
@@ -278,24 +280,6 @@ public class MainActivity extends AppCompatActivity {
 					}
 			);
 
-			FirebaseDatabase.getInstance().getReference().child("users").child(currentUser.getUid()).child("current clip").addValueEventListener(new ValueEventListener() {
-				@Override
-				public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-
-					try {
-						editText.setText(dataSnapshot.getValue().toString());
-						sharedPreferences.edit().putString("CURRENT_CLIP", dataSnapshot.getValue().toString()).apply();
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-
-				@Override
-				public void onCancelled(@NonNull DatabaseError databaseError) {
-					editText.setText(sharedPreferences.getString("CURRENT_CLIP", ""));
-				}
-			});
-
 			//Put current user in shared preference
 			sharedPreferences.edit().putString(LAST_UUID, currentUser.getUid()).apply();
 		}
@@ -307,9 +291,20 @@ public class MainActivity extends AppCompatActivity {
 		super.onResume();
 		ActivityVisibility.activityResumed();
 
+		//Clipboard Service check and startup
+		ClipboardListenerService clipboardService = new ClipboardListenerService();
+		Intent serviceIntent = new Intent(this, clipboardService.getClass());
+
+		if (!serviceRunning(clipboardService.getClass())) {
+			startService(serviceIntent);
+		}
+
 		if (updateRequired(this)) {
 			Intent intent = new Intent(MainActivity.this, UpdateRequiredActivity.class);
 			intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+
+			StartService.killedProg = true;
+			stopService(new Intent(MainActivity.this, ClipboardListenerService.class));
 
 			startActivity(intent);
 		}
@@ -318,15 +313,27 @@ public class MainActivity extends AppCompatActivity {
 
 		findViewById(R.id.dummy).requestFocus();
 
-		if (clipboardListenerObj.getCurrentClip() != null) {
-			editText.setText(clipboardListenerObj.getCurrentClip());
-			sharedPreferences.edit().putString("CURRENT_CLIP", clipboardListenerObj.getCurrentClip()).apply();
+		if (currentClip.getCurrentClip() != null) {
+			editText.setText(currentClip.getCurrentClip());
+			sharedPreferences.edit().putString("CURRENT_CLIP", currentClip.getCurrentClip()).apply();
 		}
 
 		syncButtonClicked(findViewById(R.id.syncImage));
 
 	}
 
+	@Override
+	protected void onStop() {
+		super.onStop();
+
+		if (!settingsPreferences.getBoolean("always_running_pref", true) && !toSettings) {
+			StartService.killedProg = true;
+			stopService(new Intent(MainActivity.this, ClipboardListenerService.class));
+		}else{
+			toSettings = false;
+		}
+
+	}
 
 	private boolean serviceRunning(Class<?> serviceClass) {
 		ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
@@ -812,8 +819,7 @@ public class MainActivity extends AppCompatActivity {
 
 				}
 			});
-		} catch (
-				Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
@@ -830,27 +836,14 @@ public class MainActivity extends AppCompatActivity {
 
 	}
 
+	boolean toSettings = false;
+
 	public void profileClicked(View view) {
-		Toast toast = Toast.makeText(MainActivity.this, userEmail, Toast.LENGTH_SHORT);
-		toast.setGravity(Gravity.TOP, view.getLeft() - view.getWidth() / 2 - toast.getView().getWidth() / 2, view.getBottom());
-		toast.show();
-
+		Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
+		toSettings = true;
+		intent.putExtra(USERS_EMAIL, userEmail);
+		startActivity(intent);
 	}
-
-	/*private void openPowerSettings(Context context) {
-		Intent intent = new Intent();
-		String packageName = context.getPackageName();
-		PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-			if (pm.isIgnoringBatteryOptimizations(packageName))
-				intent.setAction(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
-			else {
-				intent.setAction(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
-				intent.setData(Uri.parse("package:" + packageName));
-			}
-		}
-		context.startActivity(intent);
-	}*/
 
 	//VERY USEFUL CODE FOR REMOVING FOCUS ON EDITTEXT
 	@Override

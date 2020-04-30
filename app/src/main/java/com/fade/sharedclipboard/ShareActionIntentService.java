@@ -98,17 +98,22 @@ public class ShareActionIntentService extends IntentService {
 		ClipboardListenerService obj = new ClipboardListenerService();
 		obj.setFromDevice(true);
 
-		FirebaseDatabase.getInstance().getReference().child("users").child(MainActivity.currentUser.getUid()).child("current clip").setValue(param1, new DatabaseReference.CompletionListener() {
-			@Override
-			public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
-				if (databaseError == null) {
-					mHandler.post(new DisplayToast(getString(R.string.shared)));
-				} else {
-					mHandler.post(new DisplayToast(getString(R.string.failed_to_upload)));
-					System.out.print(databaseError.getDetails());
+		try {
+			FirebaseDatabase.getInstance().getReference().child("users").child(ClipboardListenerService.currentUser.getUid()).child("current clip").setValue(param1, new DatabaseReference.CompletionListener() {
+				@Override
+				public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
+					if (databaseError == null) {
+						mHandler.post(new DisplayToast(getString(R.string.shared)));
+					} else {
+						mHandler.post(new DisplayToast(getString(R.string.failed_to_upload)));
+						System.out.print(databaseError.getDetails());
+					}
 				}
-			}
-		});
+			});
+		} catch (Exception e) {
+			e.printStackTrace();
+			mHandler.post(new DisplayToast(getString(R.string.failed_to_upload)));
+		}
 	}
 
 }
