@@ -9,6 +9,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.provider.Settings;
+import android.view.View;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
@@ -76,6 +77,10 @@ public class SettingsActivity extends AppCompatActivity {
 				actionBar.setDisplayHomeAsUpEnabled(true);
 			}
 		}
+	}
+
+	public void backClicked(View view) {
+		onBackPressed();
 	}
 
 	public static class SettingsFragment extends PreferenceFragmentCompat {

@@ -24,6 +24,8 @@
     <string name="thrash_pref_sum">Deleted clips</string>
     <string name="delete_thrash_pref">Delete Thrash</string>
     <string name="delete_thrash_pref_sum">Permanently delete all thrash</string>
+    <string name="package_name">com.fade.sharedclipboard</string>
+    <string name="package_name_thrash_activity">com.fade.sharedclipboard.ThrashActivity</string>
 
     <!-- Battery Optimization -->
     <string name="dont_show">Don\'t show this message again</string>
@@ -67,6 +69,7 @@
     <string name="search">Search</string>
     <string name="delete">Delete</string>
     <string name="edit">Edit</string>
+    <string name="restore">Restore</string>
     <string name="delete_conf">Delete?</string>
     <string name="delete_conf_message">Are you sure you want to delete these clips?</string>
     <string name="content">Content</string>

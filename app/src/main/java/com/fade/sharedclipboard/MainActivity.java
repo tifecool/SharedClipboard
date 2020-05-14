@@ -63,8 +63,9 @@ public class MainActivity extends AppCompatActivity {
 	public static final String DONT_SHOW_CHECK = "DONT_SHOW_CHECK";
 	public static final String USERS_EMAIL = "users_email";
 	public static final String APP_SHARED_PREF = "LastUser";
+	public static final String SQL_DATABASE_NAME = "SAVED CLIPS";
 
-	public static FirebaseUser currentUser;
+	private static FirebaseUser currentUser;
 	private static DatabaseReference savedClipRef;
 	private static DatabaseReference deletedClipRef;
 
@@ -73,21 +74,21 @@ public class MainActivity extends AppCompatActivity {
 	private ImageView pushPinImage;
 	private ImageView syncImage;
 	private EditText editText;
-	private ClipboardListenerService clipboardListenerObj = new ClipboardListenerService();
 	private ClipboardManager clipboard;
 	private Button button;
-	private static ArrayList<Long> unixTime = new ArrayList<>();
-	private static ArrayList<Integer> syncedBoolean = new ArrayList<>();
-	private static ArrayList<String> savedClipID = new ArrayList<>();
-	private static ArrayList<String> savedClipTitles = new ArrayList<>();
-	private static ArrayList<String> savedClipContents = new ArrayList<>();
+	public static ArrayList<Long> unixTime = new ArrayList<>();
+	public static ArrayList<Integer> syncedBoolean = new ArrayList<>();
+	public static ArrayList<String> savedClipID = new ArrayList<>();
+	public static ArrayList<String> savedClipTitles = new ArrayList<>();
+	public static ArrayList<String> savedClipContents = new ArrayList<>();
 	//d for deleted, DeletedArrays
-	private static ArrayList<String> dSavedClipTitles = new ArrayList<>();
-	private static ArrayList<String> dSavedClipContents = new ArrayList<>();
-	private static ArrayList<Long> dUnixTime = new ArrayList<>();
-	private static ArrayList<Integer> dSyncedBoolean = new ArrayList<>();
-	private static ArrayList<String> dSavedClipID = new ArrayList<>();
-	private static CustomListAdapter savedClipAdapter;
+	public static ArrayList<String> dSavedClipTitles = new ArrayList<>();
+	public static ArrayList<String> dSavedClipContents = new ArrayList<>();
+	public static ArrayList<Long> dUnixTime = new ArrayList<>();
+	public static ArrayList<Integer> dSyncedBoolean = new ArrayList<>();
+	public static ArrayList<String> dSavedClipID = new ArrayList<>();
+	public static ArrayList<Integer> dDeleted = new ArrayList<>();
+	private static NavListAdapter savedClipAdapter;
 	private DrawerLayout drawerLayout;
 	private static SQLiteDatabase database;
 	private SharedPreferences sharedPreferences;
@@ -108,9 +109,10 @@ public class MainActivity extends AppCompatActivity {
 		}
 	};
 	private ListView navList;
-	private String packageName;
-	private PowerManager pm;
 	private CurrentClip currentClip;
+
+	public MainActivity() {
+	}
 
 
 	@Override
@@ -125,9 +127,7 @@ public class MainActivity extends AppCompatActivity {
 		button = findViewById(R.id.saveButton);
 		drawerLayout = findViewById(R.id.drawer_layout);
 
-		/*Intent intent = new Intent();
-		intent.setAction(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
-		startActivity(intent);*/
+		clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
 
 		currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
@@ -149,12 +149,12 @@ public class MainActivity extends AppCompatActivity {
 			});
 
 			//Database Initialization and creation
-			database = this.openOrCreateDatabase("SAVED CLIPS", MODE_PRIVATE, null);
+			database = this.openOrCreateDatabase(SQL_DATABASE_NAME, MODE_PRIVATE, null);
 			sharedPreferences = this.getSharedPreferences(APP_SHARED_PREF, MODE_PRIVATE);
 			settingsPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
-			packageName = this.getPackageName();
-			pm = (PowerManager) this.getSystemService(Context.POWER_SERVICE);
+			String packageName = this.getPackageName();
+			PowerManager pm = (PowerManager) this.getSystemService(Context.POWER_SERVICE);
 
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 				if (!pm.isIgnoringBatteryOptimizations(packageName) && !sharedPreferences.getBoolean(DONT_SHOW_CHECK, false))
@@ -178,16 +178,18 @@ public class MainActivity extends AppCompatActivity {
 			dSavedClipID.clear();
 			dSyncedBoolean.clear();
 			dUnixTime.clear();
+			dDeleted.clear();
 
 			//Creates a List adapter, List views use them to set content
-			savedClipAdapter = new CustomListAdapter(this, savedClipTitles, syncedBoolean);
+			savedClipAdapter = new NavListAdapter(this, savedClipTitles, syncedBoolean);
 			savedClipAdapter.notifyDataSetChanged();
 
-			//database.execSQL("DROP TABLE IF EXISTS SavedClips");
+			/*database.execSQL("DROP TABLE IF EXISTS SavedClips");
+			database.execSQL("DROP TABLE IF EXISTS DeletedClips");*/
 
 			//Database Tables
 			database.execSQL("CREATE TABLE IF NOT EXISTS SavedClips (id VARCHAR(36) PRIMARY KEY, ClipTitle VARCHAR, ClipContent VARCHAR, UnixTimeLastSynced INT , Synced INT)");
-			database.execSQL("CREATE TABLE IF NOT EXISTS DeletedClips (id VARCHAR(36) PRIMARY KEY, ClipTitle VARCHAR, ClipContent VARCHAR, UnixTimeLastSynced INT, Synced INT)");
+			database.execSQL("CREATE TABLE IF NOT EXISTS DeletedClips (id VARCHAR(36) PRIMARY KEY, ClipTitle VARCHAR, ClipContent VARCHAR, UnixTimeLastSynced INT, Synced INT, Deleted INT)");
 
 			//User Check
 			if (differentUserLoggedIn()) {
@@ -233,6 +235,7 @@ public class MainActivity extends AppCompatActivity {
 					int clipIDIndex = c.getColumnIndex("id");
 					int clipTitleIndex = c.getColumnIndex("ClipTitle");
 					int clipContentIndex = c.getColumnIndex("ClipContent");
+					int deletedIndex = c.getColumnIndex("Deleted");
 
 					if (c.moveToFirst()) {
 						do {
@@ -241,6 +244,7 @@ public class MainActivity extends AppCompatActivity {
 							dSavedClipID.add(0, c.getString(clipIDIndex));
 							dSavedClipContents.add(0, c.getString(clipContentIndex));
 							dSavedClipTitles.add(0, c.getString(clipTitleIndex));
+							dDeleted.add(0, deletedIndex);
 						} while (c.moveToNext());
 					}
 
@@ -329,7 +333,7 @@ public class MainActivity extends AppCompatActivity {
 		if (!settingsPreferences.getBoolean("always_running_pref", true) && !toSettings) {
 			StartService.killedProg = true;
 			stopService(new Intent(MainActivity.this, ClipboardListenerService.class));
-		}else{
+		} else {
 			toSettings = false;
 		}
 
@@ -545,11 +549,10 @@ public class MainActivity extends AppCompatActivity {
 
 		syncRunner = new Utils.UnixTimeDownloader();
 
-		if (!unixTime.isEmpty()) {
 			updateFromFirebase();
 			syncRunner.execute("https://worldtimeapi.org/api/timezone/Etc/UTC");
 			syncImage.startAnimation(AnimationUtils.loadAnimation(MainActivity.this, R.anim.rotate));
-		}
+
 	}
 
 	public void logoutClicked(View view) {
@@ -567,13 +570,28 @@ public class MainActivity extends AppCompatActivity {
 
 	private void updateFromFirebase() {
 
+		//IDs of Permanently deleted clips
+		final ArrayList<String> deletedIDs = new ArrayList<>();
+		deletedIDs.clear();
 		try {
+			Cursor c = database.rawQuery("SELECT * FROM DeletedClips WHERE Deleted = 1 ORDER BY UnixTimeLastSynced ASC", null);
+			int idIndex = c.getColumnIndex("id");
+
+			if (c.moveToFirst()) {
+				do {
+					deletedIDs.add(c.getString(idIndex));
+				} while (c.moveToNext());
+			}
+			c.close();
+
+
 			//Update Saved Table
 			Query unixTimeOrderedSaved = savedClipRef.orderByChild("unix time");
 
 			unixTimeOrderedSaved.addListenerForSingleValueEvent(new ValueEventListener() {
 				@Override
 				public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+
 
 					for (DataSnapshot savedClip : dataSnapshot.getChildren()) {
 
@@ -589,6 +607,7 @@ public class MainActivity extends AppCompatActivity {
 									dSavedClipTitles.remove(i);
 									dUnixTime.remove(i);
 									dSyncedBoolean.remove(i);
+									dDeleted.remove(i);
 								} else {
 									savedClipRef.child(dSavedClipID.get(i)).removeValue();
 
@@ -702,6 +721,17 @@ public class MainActivity extends AppCompatActivity {
 				@Override
 				public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
+					//Deletion of Permanently Deleted Clips
+					for(String deletedId : deletedIDs){
+						if(dataSnapshot.hasChild(deletedId)){
+							deletedClipRef.child(deletedId).removeValue();
+						}
+						SQLiteStatement deleteStatement = database.compileStatement("DELETE FROM DeletedClips WHERE id = ?");
+						deleteStatement.bindString(1,deletedId);
+						deleteStatement.execute();
+					}
+
+
 					for (DataSnapshot deletedClip : dataSnapshot.getChildren()) {
 
 						if (!dSavedClipID.contains(deletedClip.getKey())) {
@@ -728,8 +758,12 @@ public class MainActivity extends AppCompatActivity {
 								}
 							}
 
+							if(deletedIDs.contains(deletedClip.getKey())){
+								continue;
+							}
+
 							SQLiteStatement statement =
-									database.compileStatement("INSERT INTO DeletedClips (id,ClipTitle,ClipContent,UnixTimeLastSynced,Synced) VALUES (? , ? , ?, ?, 1)");
+									database.compileStatement("INSERT INTO DeletedClips (id,ClipTitle,ClipContent,UnixTimeLastSynced,Synced,Deleted) VALUES (? , ? , ?, ?, 1, 0)");
 
 							statement.bindString(1, deletedClip.getKey());
 							statement.bindString(2, deletedClip.child("title").getValue().toString());
@@ -745,6 +779,7 @@ public class MainActivity extends AppCompatActivity {
 							}
 
 							dSyncedBoolean.add(i, 1);
+							dDeleted.add(i, 0);
 							dUnixTime.add(i, (long) deletedClip.child("unix time").getValue());
 							dSavedClipID.add(i, deletedClip.getKey());
 							dSavedClipContents.add(i, deletedClip.child("content").getValue().toString());
@@ -775,7 +810,7 @@ public class MainActivity extends AppCompatActivity {
 									dSavedClipID.add(i, id);
 
 									SQLiteStatement statement =
-											database.compileStatement("INSERT INTO DeletedClips (id,ClipTitle,ClipContent,UnixTimeLastSynced,Synced) VALUES (? , ? , ?, ?, 1)");
+											database.compileStatement("INSERT INTO DeletedClips (id,ClipTitle,ClipContent,UnixTimeLastSynced,Synced,Deleted) VALUES (? , ? , ?, ?, 1, 0)");
 
 									statement.bindString(1, deletedClip.getKey());
 									statement.bindString(2, deletedClip.child("title").getValue().toString());
@@ -784,6 +819,7 @@ public class MainActivity extends AppCompatActivity {
 									statement.execute();
 
 									dSyncedBoolean.add(i + 1, 1);
+									dDeleted.add(i + 1, 0);
 									dUnixTime.add(i + 1, (long) deletedClip.child("unix time").getValue());
 									dSavedClipID.add(i + 1, deletedClip.getKey());
 									dSavedClipContents.add(i + 1, deletedClip.child("content").getValue().toString());
@@ -791,7 +827,7 @@ public class MainActivity extends AppCompatActivity {
 								} else {
 
 									SQLiteStatement updateStatement =
-											database.compileStatement("UPDATE DeletedClips SET ClipTitle = ?,ClipContent = ?,UnixTimeLastSynced = ?,Synced = 1 WHERE id = ?");
+											database.compileStatement("UPDATE DeletedClips SET ClipTitle = ?,ClipContent = ?,UnixTimeLastSynced = ?,Synced = 1,Deleted = 0 WHERE id = ?");
 
 									updateStatement.bindString(1, deletedClip.child("title").getValue().toString());
 									updateStatement.bindString(2, deletedClip.child("content").getValue().toString());
@@ -921,7 +957,6 @@ public class MainActivity extends AppCompatActivity {
 			mode.getMenuInflater().inflate(R.menu.listview_multiselect_menu, menu);
 			drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_OPEN);
 
-
 			return true;
 		}
 
@@ -943,7 +978,7 @@ public class MainActivity extends AppCompatActivity {
 									SQLiteStatement deleteStatement =
 											database.compileStatement("DELETE FROM SavedClips WHERE id = ?");
 									SQLiteStatement insertStatement =
-											database.compileStatement("INSERT INTO DeletedClips (id,ClipTitle,ClipContent,UnixTimeLastSynced,Synced) VALUES (? , ? , ?, 0, 0)");
+											database.compileStatement("INSERT INTO DeletedClips (id,ClipTitle,ClipContent,UnixTimeLastSynced,Synced,Deleted) VALUES (? , ? , ?, 0, 0,0)");
 
 									// Calls getSelectedIds method from ListViewAdapter Class
 									SparseBooleanArray selected = savedClipAdapter.getSelectedIds();
@@ -963,6 +998,7 @@ public class MainActivity extends AppCompatActivity {
 											insertStatement.bindString(3, savedClipContents.get(s));
 											dUnixTime.add((long) 0);
 											dSyncedBoolean.add(0);
+											dDeleted.add(0);
 											insertStatement.execute();
 
 											deleteStatement.bindString(1, savedClipID.get(s));

@@ -1,7 +1,8 @@
-<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
     <PreferenceCategory
-        app:allowDividerAbove="false"
+        app:allowDividerAbove="true"
         app:iconSpaceReserved="false"
         app:title="@string/general_title">
 
@@ -53,7 +54,11 @@
 
         <Preference
             app:summary="@string/thrash_pref_sum"
-            app:title="@string/thrash_pref"/>
+            app:title="@string/thrash_pref">
+            <intent
+                android:targetPackage="@string/package_name"
+                android:targetClass="@string/package_name_thrash_activity"/>
+        </Preference>
 
         <Preference
             app:icon="@drawable/delete_grey"

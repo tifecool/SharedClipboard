@@ -15,14 +15,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class CustomListAdapter extends ArrayAdapter<String> {
+public class NavListAdapter extends ArrayAdapter<String> {
 
 	private ArrayList<Integer> syncedData;
     private ArrayList<String> list;
     private SparseBooleanArray mSelectedItemsIds;
 
         //Constructor for adapter type, it takes in the context and an array
-	CustomListAdapter(Context context, ArrayList<String> list, ArrayList<Integer> syncedData) {
+	NavListAdapter(Context context, ArrayList<String> list, ArrayList<Integer> syncedData) {
         super(context,R.layout.custom_row, list);
         //gets context, view to be changed and array passed in
         this.syncedData = syncedData;
@@ -30,7 +30,7 @@ public class CustomListAdapter extends ArrayAdapter<String> {
         mSelectedItemsIds = new SparseBooleanArray();
     }
 
-    private class ViewHolder{
+    private static class ViewHolder{
 
         ImageView imageView;
         TextView textEdit;
@@ -38,7 +38,7 @@ public class CustomListAdapter extends ArrayAdapter<String> {
 
     @NonNull
     @Override
-    public View getView(int position, View view, ViewGroup parent) {
+    public View getView(int position, View view, @NonNull ViewGroup parent) {
         //getView gets view used in list
 
         LayoutInflater inflated = LayoutInflater.from(getContext());
@@ -76,18 +76,18 @@ public class CustomListAdapter extends ArrayAdapter<String> {
         return list;
     }
 
-    public void toggleSelection(int position) {
+    void toggleSelection(int position) {
         selectView(position, !mSelectedItemsIds.get(position));
     }
 
-    public void removeSelection() {
+    void removeSelection() {
         mSelectedItemsIds = new SparseBooleanArray();
         notifyDataSetChanged();
     }
 
-    public void selectView(int position, boolean value) {
+    private void selectView(int position, boolean value) {
         if (value)
-            mSelectedItemsIds.put(position, value);
+            mSelectedItemsIds.put(position, true);
         else
             mSelectedItemsIds.delete(position);
         notifyDataSetChanged();
@@ -97,7 +97,7 @@ public class CustomListAdapter extends ArrayAdapter<String> {
         return mSelectedItemsIds.size();
     }
 
-    public SparseBooleanArray getSelectedIds() {
+    SparseBooleanArray getSelectedIds() {
         return mSelectedItemsIds;
     }
 }

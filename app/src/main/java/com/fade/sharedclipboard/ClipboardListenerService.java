@@ -45,7 +45,7 @@ public class ClipboardListenerService extends Service {
 	public static FirebaseUser currentUser;
 	CurrentClip currentClip;
 	SharedPreferences settingsSharedPref;
-
+//TODO: CHANGE PRIORITY OF NOTIFICATIONS
 
 	@Override
 	public void onCreate() {

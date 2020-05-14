@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+        <item
+            android:id="@+id/thrashRestore"
+            android:title="@string/restore"
+            android:icon="@drawable/ic_undo_24dp"/>
+
+        <item
+            android:id="@+id/thrashDelete"
+            android:title="@string/delete"
+            android:icon="@drawable/delete_white"/>
+
+</menu>
