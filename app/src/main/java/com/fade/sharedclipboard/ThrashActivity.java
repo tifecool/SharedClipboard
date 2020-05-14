@@ -29,17 +29,16 @@ public class ThrashActivity extends AppCompatActivity {
 
 		final SQLiteDatabase database = this.openOrCreateDatabase(MainActivity.SQL_DATABASE_NAME, MODE_PRIVATE, null);
 
-
 		final ThrashListAdapter arrayAdapter = new ThrashListAdapter(this, MainActivity.dSavedClipTitles);
 
 		listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view, final int position, long id) {
 				new AlertDialog.Builder(ThrashActivity.this)
-						.setTitle("Alert")
+						.setTitle(R.string.alert)
 						.setIcon(R.drawable.warning_bright)
-						.setMessage("Do you want to restore or permanently delete this clip?")
-						.setNegativeButton("Delete", new DialogInterface.OnClickListener() {
+						.setMessage(R.string.restore_delete)
+						.setNegativeButton(R.string.delete, new DialogInterface.OnClickListener() {
 							@Override
 							public void onClick(DialogInterface dialog, int which) {
 								SQLiteStatement statement = database.compileStatement("UPDATE DeletedClips SET Deleted = 1 WHERE id = ?");
@@ -57,7 +56,7 @@ public class ThrashActivity extends AppCompatActivity {
 
 							}
 						})
-						.setPositiveButton("Restore", new DialogInterface.OnClickListener() {
+						.setPositiveButton(R.string.restore, new DialogInterface.OnClickListener() {
 							@Override
 							public void onClick(DialogInterface dialog, int which) {
 

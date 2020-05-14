@@ -63,7 +63,8 @@
         <Preference
             app:icon="@drawable/delete_grey"
             app:summary="@string/delete_thrash_pref_sum"
-            app:title="@string/delete_thrash_pref" />
+            app:title="@string/delete_thrash_pref"
+            app:key="delete_all_pref"/>
 
     </PreferenceCategory>
 

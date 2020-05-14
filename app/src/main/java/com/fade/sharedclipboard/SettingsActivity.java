@@ -4,12 +4,16 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteStatement;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.provider.Settings;
 import android.view.View;
+import android.widget.Toast;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
@@ -31,6 +35,7 @@ public class SettingsActivity extends AppCompatActivity {
 	private static String packageName;
 	private static Intent fromMainActivity;
 	private static SharedPreferences sharedPreferences;
+	private static SQLiteDatabase database;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +45,8 @@ public class SettingsActivity extends AppCompatActivity {
 		sharedPreferences = this.getSharedPreferences(APP_SHARED_PREF, MODE_PRIVATE);
 		fromMainActivity = getIntent();
 		FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+
+		database = this.openOrCreateDatabase(MainActivity.SQL_DATABASE_NAME, MODE_PRIVATE, null);
 
 		if (currentUser == null) {
 			startActivity(new Intent(SettingsActivity.this, LoginActivity.class));
@@ -122,7 +129,7 @@ public class SettingsActivity extends AppCompatActivity {
 					if (!(boolean) newValue) {
 						new AlertDialog.Builder(getContext())
 								.setTitle(R.string.alert_sure)
-								.setMessage("This will prevent the app from functioning in the background.\n\nConsider turning off notifications instead.")
+								.setMessage(R.string.always_running_warning)
 								.setIcon(R.drawable.warning_bright)
 								.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
 									@Override
@@ -144,6 +151,62 @@ public class SettingsActivity extends AppCompatActivity {
 
 				}
 			});
+
+			Preference deleteAllPref = findPreference("delete_all_pref");
+			assert deleteAllPref != null;
+
+			deleteAllPref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+				@Override
+				public boolean onPreferenceClick(Preference preference) {
+					try {
+						final Cursor c = database.rawQuery("SELECT * FROM DeletedClips WHERE Deleted = 0 ORDER BY UnixTimeLastSynced ASC ", null);
+						final int idIndex = c.getColumnIndex("id");
+
+						if (c.moveToFirst()) {
+							new AlertDialog.Builder(getContext())
+									.setTitle(R.string.alert_sure)
+									.setMessage("Are you sure you want to permanently delete all your deleted clips?")
+									.setPositiveButton("Delete All", new DialogInterface.OnClickListener() {
+										@Override
+										public void onClick(DialogInterface dialog, int which) {
+
+											do {
+												SQLiteStatement deleteStatement =
+														database.compileStatement("UPDATE DeletedClips SET Deleted = 1 WHERE id = ?");
+
+												deleteStatement.bindString(1,c.getString(idIndex));
+												deleteStatement.execute();
+
+												int i = MainActivity.dSavedClipID.indexOf(c.getString(idIndex));
+
+												MainActivity.dSavedClipID.remove(i);
+												MainActivity.dSavedClipContents.remove(i);
+												MainActivity.dSavedClipTitles.remove(i);
+												MainActivity.dSyncedBoolean.remove(i);
+												MainActivity.dUnixTime.remove(i);
+
+											} while (c.moveToNext());
+
+											c.close();
+
+
+										}
+									})
+									.setNegativeButton(R.string.cancel, null)
+									.show();
+
+						} else {
+							Toast.makeText(getContext(), "No Deleted Clips", Toast.LENGTH_SHORT).show();
+						}
+
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+
+					return true;
+				}
+			});
+
 
 		}
 
