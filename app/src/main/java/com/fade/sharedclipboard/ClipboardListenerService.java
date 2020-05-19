@@ -45,7 +45,6 @@ public class ClipboardListenerService extends Service {
 	public static FirebaseUser currentUser;
 	CurrentClip currentClip;
 	SharedPreferences settingsSharedPref;
-//TODO: CHANGE PRIORITY OF NOTIFICATIONS
 
 	@Override
 	public void onCreate() {
@@ -247,7 +246,7 @@ public class ClipboardListenerService extends Service {
 		if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
 
 			String copiedNotificationName = "Copied Notifications";
-			NotificationChannel chan1 = new NotificationChannel(COPIED_CHANNEL, copiedNotificationName, NotificationManager.IMPORTANCE_HIGH);
+			NotificationChannel chan1 = new NotificationChannel(COPIED_CHANNEL, copiedNotificationName, NotificationManager.IMPORTANCE_DEFAULT);
 			chan1.setLockscreenVisibility(Notification.VISIBILITY_SECRET);
 			manager.createNotificationChannel(chan1);
 
@@ -264,7 +263,7 @@ public class ClipboardListenerService extends Service {
 			copiedNotifyBuilder
 					.setContentTitle(getString(R.string.new_clip))
 					.setContentText(currentClipContent)
-					.setPriority(NotificationManager.IMPORTANCE_HIGH)
+					.setPriority(NotificationManager.IMPORTANCE_DEFAULT)
 					.setCategory(Notification.CATEGORY_EVENT)
 					.setContentIntent(notifyPendingIntent)
 					.setSmallIcon(R.drawable.demo_icon);
@@ -321,7 +320,7 @@ public class ClipboardListenerService extends Service {
 		if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
 
 			String onlineNotificationName = "Online Notification";
-			NotificationChannel chan2 = new NotificationChannel(ONLINE_CHANNEL, onlineNotificationName, NotificationManager.IMPORTANCE_HIGH);
+			NotificationChannel chan2 = new NotificationChannel(ONLINE_CHANNEL, onlineNotificationName, NotificationManager.IMPORTANCE_DEFAULT);
 			chan2.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
 			manager.createNotificationChannel(chan2);
 
@@ -336,7 +335,7 @@ public class ClipboardListenerService extends Service {
 			copiedNotifyBuilder
 					.setContentTitle(getString(R.string.new_clip))
 					.setContentText(currentClipContent)
-					.setPriority(NotificationManager.IMPORTANCE_HIGH)
+					.setPriority(NotificationManager.IMPORTANCE_DEFAULT)
 					.setCategory(Notification.CATEGORY_EVENT)
 					.setContentIntent(notifyPendingIntent)
 					.setSmallIcon(R.drawable.demo_icon)

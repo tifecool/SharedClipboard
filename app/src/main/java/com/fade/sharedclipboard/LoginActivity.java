@@ -36,7 +36,6 @@ import com.google.firebase.database.FirebaseDatabase;
 public class LoginActivity extends AppCompatActivity {
 	final static int RC_SIGN_IN = 9;
 
-	//TODO:	Setup basic sign up then firebase based.
 	Intent intent;
 	private int signupClickInt;
 	private GoogleSignInClient mGoogleSignInClient;
