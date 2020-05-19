@@ -14,6 +14,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.IBinder;
+import android.provider.Settings;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -296,7 +297,8 @@ public class ClipboardListenerService extends Service {
 					.setContentTitle(getString(R.string.new_clip))
 					.setContentText(currentClipContent)
 					.setContentIntent(notifyPendingIntent)
-					.setSmallIcon(R.drawable.demo_icon);
+					.setSmallIcon(R.drawable.demo_icon)
+					.setSound(Settings.System.DEFAULT_NOTIFICATION_URI);
 
 			if (above150) {
 				if (currentClipContent.length() > 3000) {
@@ -358,7 +360,8 @@ public class ClipboardListenerService extends Service {
 					.setContentText(currentClipContent)
 					.setContentIntent(notifyPendingIntent)
 					.setSmallIcon(R.drawable.demo_icon)
-					.addAction(R.drawable.ic_search, getString(R.string.copy_text), copyAction());
+					.addAction(R.drawable.ic_search, getString(R.string.copy_text), copyAction())
+					.setSound(Settings.System.DEFAULT_NOTIFICATION_URI);
 
 			onlineNotify = copiedNotifyBuilder.build();
 		}
