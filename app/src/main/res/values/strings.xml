@@ -88,5 +88,6 @@
     <string name="accept">Accept</string>
     <string name="restore_delete">Do you want to restore or permanently delete this clip?</string>
     <string name="always_running_warning">This will prevent the app from functioning in the background.\n\nConsider turning off notifications instead.</string>
+    <string name="back_press">Back Press</string>
 
 </resources>
