@@ -13,7 +13,12 @@ import android.os.Bundle;
 import android.os.PowerManager;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -33,10 +38,14 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
+import com.google.firebase.auth.FirebaseAuthInvalidUserException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.auth.UserInfo;
+import com.google.firebase.database.FirebaseDatabase;
 
 import static com.fade.sharedclipboard.LoginActivity.RC_SIGN_IN;
 import static com.fade.sharedclipboard.MainActivity.APP_SHARED_PREF;
@@ -121,7 +130,7 @@ public class SettingsActivity extends AppCompatActivity {
 					Log.d(TAG, "User is signed in with Google");
 					linkGooglePref.setVisible(false);
 					break;
-				}else{
+				} else {
 					linkGooglePref.setVisible(true);
 				}
 			}
@@ -255,6 +264,134 @@ public class SettingsActivity extends AppCompatActivity {
 				}
 			});
 
+			Preference deleteAccountPref = findPreference("delete_account_pref");
+			assert deleteAccountPref != null;
+
+			deleteAccountPref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+				@Override
+				public boolean onPreferenceClick(Preference preference) {
+
+					LayoutInflater inflated = getLayoutInflater();
+					final View view = inflated.inflate(R.layout.delete_user_dialog, null);
+					final EditText password = view.findViewById(R.id.passwordDialog);
+					final EditText email = view.findViewById(R.id.emailDialog);
+					final TextView passwordReq = view.findViewById(R.id.passwordDialogReqText);
+					final TextView emailReq = view.findViewById(R.id.emailDialogReqText);
+
+					final View.OnClickListener deleteDialogueClick = new View.OnClickListener() {
+						@Override
+						public void onClick(View view1) {
+
+							passwordReq.setVisibility(View.GONE);
+							emailReq.setVisibility(View.GONE);
+
+							if (!email.getText().toString().isEmpty() && !password.getText().toString().isEmpty()) {
+
+								AuthCredential credential = EmailAuthProvider.getCredential(email.getText().toString(), password.getText().toString());
+
+								currentUser.reauthenticate(credential).addOnCompleteListener(new OnCompleteListener<Void>() {
+									@Override
+									public void onComplete(@NonNull Task<Void> task) {
+										if (task.isSuccessful()) {
+											FirebaseDatabase.getInstance().getReference().child("users").child(currentUser.getUid()).removeValue();
+											currentUser.delete();
+
+											Intent intent = new Intent(getContext(), LoginActivity.class);
+											intent.putExtra(MainActivity.MAIN_ACTIVITY_INTENT, true);
+											startActivity(intent);
+
+											StartService.killedProg = true;
+											getActivity().stopService(new Intent(getContext(), ClipboardListenerService.class));
+
+											getActivity().finish();
+
+										} else {
+											try {
+												throw task.getException();
+
+											} catch (FirebaseAuthInvalidCredentialsException e) {
+												if (e.getErrorCode().equals("ERROR_INVALID_EMAIL")) {
+													Toast.makeText(getContext(), getString(R.string.invalid_email_format), Toast.LENGTH_SHORT).show();
+													email.requestFocus();
+												} else {
+													Toast.makeText(getContext(), getString(R.string.incorrect_password), Toast.LENGTH_SHORT).show();
+													password.requestFocus();
+												}
+
+												Log.i("ERROR", e.getErrorCode());
+
+											} catch (FirebaseAuthInvalidUserException e) {
+												email.requestFocus();
+
+											} catch (Exception e) {
+												Toast.makeText(getContext(), R.string.login_failed, Toast.LENGTH_SHORT).show();
+												Log.w("Failed", "signInWithCredential:failure");
+												e.printStackTrace();
+											}
+											Log.i("ERROR", task.getException().toString());
+										}
+									}
+								});
+
+							} else {
+								if (password.getText().toString().isEmpty() && password.getText().toString().isEmpty()) {
+
+									passwordReq.setVisibility(View.VISIBLE);
+									emailReq.setVisibility(View.VISIBLE);
+
+								} else if (password.getText().toString().isEmpty()) {
+									passwordReq.setVisibility(View.VISIBLE);
+
+								} else if (email.getText().toString().isEmpty()) {
+									emailReq.setVisibility(View.VISIBLE);
+
+								}
+							}
+
+						}
+					};
+
+					final AlertDialog dialog = new AlertDialog.Builder(getContext())
+							.setTitle("Delete User")
+							.setMessage("To confirm that this user should be deleted, please enter your email and password:")
+							.setIcon(R.drawable.warning_bright)
+							.setView(view)
+							.setPositiveButton(R.string.delete, null)
+							.setNegativeButton(R.string.cancel, null)
+							.create();
+
+					dialog.setOnShowListener(new DialogInterface.OnShowListener() {
+						@Override
+						public void onShow(DialogInterface dialogInterface) {
+							dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(
+									deleteDialogueClick
+							);
+						}
+					});
+
+					dialog.show();
+
+					password.setOnKeyListener(new View.OnKeyListener() {
+						@Override
+						public boolean onKey(View view, int i, KeyEvent keyEvent) {
+
+							if (keyEvent.getAction() == KeyEvent.ACTION_DOWN && i == KeyEvent.KEYCODE_ENTER) {
+								InputMethodManager inputMethodManager = (InputMethodManager) getActivity().getSystemService(INPUT_METHOD_SERVICE);
+								inputMethodManager.hideSoftInputFromWindow(getActivity().getCurrentFocus().getWindowToken(), 0);
+								deleteDialogueClick.onClick(dialog.getButton(DialogInterface.BUTTON_POSITIVE));
+							}
+							return false;
+						}
+					});
+
+					return true;
+
+
+				}
+
+
+			});
+
 
 		}
 
@@ -273,7 +410,7 @@ public class SettingsActivity extends AppCompatActivity {
 					// Signed in successfully, show authenticated UI.
 					if (account != null) {
 						AuthCredential credential = GoogleAuthProvider.getCredential(account.getIdToken(), null);
-						currentUser.linkWithCredential(credential).addOnCompleteListener(getActivity(),new OnCompleteListener<AuthResult>() {
+						currentUser.linkWithCredential(credential).addOnCompleteListener(getActivity(), new OnCompleteListener<AuthResult>() {
 							@Override
 							public void onComplete(@NonNull Task<AuthResult> task) {
 								if (task.isSuccessful()) {
@@ -283,11 +420,13 @@ public class SettingsActivity extends AppCompatActivity {
 									findPreference("google_pref").setVisible(false);
 								} else {
 									Log.w(TAG, "linkWithCredential:failure", task.getException());
+
 									new AlertDialog.Builder(getContext())
 											.setIcon(R.drawable.warning_bright)
 											.setTitle(R.string.link_fail_title)
 											.setMessage(R.string.link_fail_message)
-											.setPositiveButton(R.string.ok,null);
+											.setPositiveButton(R.string.ok, null)
+											.show();
 								}
 							}
 						});
