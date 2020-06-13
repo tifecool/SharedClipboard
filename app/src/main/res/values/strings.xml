@@ -1,5 +1,10 @@
 <resources>
 
+    <!-- Account Preferences -->
+    <string name="account_title">Account</string>
+    <string name="google_pref_sum">Linking google account is required for the chrome extension</string>
+    <string name="google_pref_title">Link Google Account</string>
+
     <!-- Notification Preferences -->
     <string name="system_notifications">Additional options in system settings…</string>
     <string name="database_notification_pref">New Shared Clip Notification</string>
@@ -89,5 +94,9 @@
     <string name="restore_delete">Do you want to restore or permanently delete this clip?</string>
     <string name="always_running_warning">This will prevent the app from functioning in the background.\n\nConsider turning off notifications instead.</string>
     <string name="back_press">Back Press</string>
+    <string name="link_fail_message">If google account linked to another account, please log in with google sign in and delete prior account before preceding.</string>
+    <string name="link_fail_title">Unable To Link Account</string>
+    <string name="link_successful">Account Linked Successfully</string>
+    <string name="ok">Okay</string>
 
 </resources>

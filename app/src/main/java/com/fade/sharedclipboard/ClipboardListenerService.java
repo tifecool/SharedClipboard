@@ -29,6 +29,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import static androidx.constraintlayout.widget.Constraints.TAG;
 import static com.fade.sharedclipboard.MainActivity.APP_SHARED_PREF;
 
 public class ClipboardListenerService extends Service {
@@ -265,7 +266,6 @@ public class ClipboardListenerService extends Service {
 					.setContentTitle(getString(R.string.new_clip))
 					.setContentText(currentClipContent)
 					.setPriority(NotificationManager.IMPORTANCE_DEFAULT)
-					.setCategory(Notification.CATEGORY_EVENT)
 					.setContentIntent(notifyPendingIntent)
 					.setSmallIcon(R.drawable.demo_icon);
 
@@ -333,17 +333,17 @@ public class ClipboardListenerService extends Service {
 				currentClipContent = currentClipContent.concat("...");
 			}
 
-			NotificationCompat.Builder copiedNotifyBuilder = new NotificationCompat.Builder(this, COPIED_CHANNEL);
+			NotificationCompat.Builder copiedNotifyBuilder = new NotificationCompat.Builder(this, ONLINE_CHANNEL);
 			copiedNotifyBuilder
 					.setContentTitle(getString(R.string.new_clip))
 					.setContentText(currentClipContent)
 					.setPriority(NotificationManager.IMPORTANCE_DEFAULT)
-					.setCategory(Notification.CATEGORY_EVENT)
 					.setContentIntent(notifyPendingIntent)
 					.setSmallIcon(R.drawable.demo_icon)
 					.addAction(R.drawable.ic_search, getString(R.string.copy_text), copyAction());
 
 			onlineNotify = copiedNotifyBuilder.build();
+			Log.d(TAG, "currentClipUpdatedNotification: ONLINE NOTIFY");
 
 		} else {
 
@@ -354,7 +354,7 @@ public class ClipboardListenerService extends Service {
 				currentClipContent = currentClipContent.concat("...");
 			}
 
-			NotificationCompat.Builder copiedNotifyBuilder = new NotificationCompat.Builder(this, COPIED_CHANNEL);
+			NotificationCompat.Builder copiedNotifyBuilder = new NotificationCompat.Builder(this, ONLINE_CHANNEL);
 			copiedNotifyBuilder
 					.setContentTitle(getString(R.string.new_clip))
 					.setContentText(currentClipContent)

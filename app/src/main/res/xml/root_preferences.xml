@@ -54,17 +54,38 @@
 
         <Preference
             app:summary="@string/thrash_pref_sum"
-            app:title="@string/thrash_pref">
+            app:title="@string/thrash_pref"
+            app:icon="@drawable/delete_grey">
             <intent
                 android:targetPackage="@string/package_name"
                 android:targetClass="@string/package_name_thrash_activity"/>
         </Preference>
 
         <Preference
-            app:icon="@drawable/delete_grey"
             app:summary="@string/delete_thrash_pref_sum"
             app:title="@string/delete_thrash_pref"
-            app:key="delete_all_pref"/>
+            app:key="delete_all_pref"
+            app:icon="@drawable/delete_red"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:allowDividerAbove="false"
+        app:iconSpaceReserved="false"
+        app:title="@string/account_title">
+
+        <Preference
+            app:title="@string/google_pref_title"
+            app:icon="@drawable/googleg_standard_color_18"
+            app:summary="@string/google_pref_sum"
+            app:isPreferenceVisible="false"
+            app:key="google_pref"/>
+
+        <Preference
+            app:layout="@layout/delete_account_preference_text"
+            app:title="Delete Account"
+            app:key="delete_account_pref"/>
+
 
     </PreferenceCategory>
 

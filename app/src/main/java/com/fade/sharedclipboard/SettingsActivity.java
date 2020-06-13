@@ -12,9 +12,11 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -22,9 +24,21 @@ import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.SwitchPreference;
 
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.auth.UserInfo;
 
+import static com.fade.sharedclipboard.LoginActivity.RC_SIGN_IN;
 import static com.fade.sharedclipboard.MainActivity.APP_SHARED_PREF;
 
 public class SettingsActivity extends AppCompatActivity {
@@ -36,6 +50,8 @@ public class SettingsActivity extends AppCompatActivity {
 	private static Intent fromMainActivity;
 	private static SharedPreferences sharedPreferences;
 	private static SQLiteDatabase database;
+	private Preference linkGooglePref;
+	private static FirebaseUser currentUser;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -44,7 +60,7 @@ public class SettingsActivity extends AppCompatActivity {
 
 		sharedPreferences = this.getSharedPreferences(APP_SHARED_PREF, MODE_PRIVATE);
 		fromMainActivity = getIntent();
-		FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+		currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
 		database = this.openOrCreateDatabase(MainActivity.SQL_DATABASE_NAME, MODE_PRIVATE, null);
 
@@ -91,9 +107,24 @@ public class SettingsActivity extends AppCompatActivity {
 	}
 
 	public static class SettingsFragment extends PreferenceFragmentCompat {
+		private String TAG = "SettingsTag";
+
 		@Override
 		public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
 			setPreferencesFromResource(R.xml.root_preferences, rootKey);
+
+			Preference linkGooglePref = findPreference("google_pref");
+			assert linkGooglePref != null;
+
+			for (UserInfo userInfo : currentUser.getProviderData()) {
+				if (userInfo.getProviderId().equals(GoogleAuthProvider.PROVIDER_ID)) {
+					Log.d(TAG, "User is signed in with Google");
+					linkGooglePref.setVisible(false);
+					break;
+				}else{
+					linkGooglePref.setVisible(true);
+				}
+			}
 
 			Preference loggedInUserPref = findPreference("logged_in_user_pref");
 			assert loggedInUserPref != null;
@@ -174,7 +205,7 @@ public class SettingsActivity extends AppCompatActivity {
 												SQLiteStatement deleteStatement =
 														database.compileStatement("UPDATE DeletedClips SET Deleted = 1 WHERE id = ?");
 
-												deleteStatement.bindString(1,c.getString(idIndex));
+												deleteStatement.bindString(1, c.getString(idIndex));
 												deleteStatement.execute();
 
 												int i = MainActivity.dSavedClipID.indexOf(c.getString(idIndex));
@@ -207,7 +238,74 @@ public class SettingsActivity extends AppCompatActivity {
 				}
 			});
 
+			linkGooglePref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+				@Override
+				public boolean onPreferenceClick(Preference preference) {
+					GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+							.requestIdToken(getString(R.string.default_web_client_id))
+							.requestEmail()
+							.build();
 
+					GoogleSignInClient mGoogleSignInClient = GoogleSignIn.getClient(getContext(), gso);
+
+					Intent signInIntent = mGoogleSignInClient.getSignInIntent();
+					preference.setEnabled(false);
+					startActivityForResult(signInIntent, RC_SIGN_IN);
+					return true;
+				}
+			});
+
+
+		}
+
+		public void onActivityResult(int requestCode, int resultCode, Intent data) {
+			super.onActivityResult(requestCode, resultCode, data);
+
+			// Result returned from launching the Intent from GoogleSignInClient.getSignInIntent(...);
+			if (requestCode == RC_SIGN_IN) {
+				// The Task returned from this call is always completed, no need to attach
+				// a listener.
+				Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+
+				try {
+					GoogleSignInAccount account = task.getResult(ApiException.class);
+
+					// Signed in successfully, show authenticated UI.
+					if (account != null) {
+						AuthCredential credential = GoogleAuthProvider.getCredential(account.getIdToken(), null);
+						currentUser.linkWithCredential(credential).addOnCompleteListener(getActivity(),new OnCompleteListener<AuthResult>() {
+							@Override
+							public void onComplete(@NonNull Task<AuthResult> task) {
+								if (task.isSuccessful()) {
+									Log.d(TAG, "linkWithCredential:success");
+									Toast.makeText(getContext(), R.string.link_successful,
+											Toast.LENGTH_SHORT).show();
+									findPreference("google_pref").setVisible(false);
+								} else {
+									Log.w(TAG, "linkWithCredential:failure", task.getException());
+									new AlertDialog.Builder(getContext())
+											.setIcon(R.drawable.warning_bright)
+											.setTitle(R.string.link_fail_title)
+											.setMessage(R.string.link_fail_message)
+											.setPositiveButton(R.string.ok,null);
+								}
+							}
+						});
+						findPreference("google_pref").setEnabled(true);
+					} else {
+						findPreference("google_pref").setEnabled(true);
+					}
+				} catch (ApiException e) {
+					// The ApiException status code indicates the detailed failure reason.
+					// Please refer to the GoogleSignInStatusCodes class reference for more information.
+					Toast.makeText(getContext(), R.string.login_failed, Toast.LENGTH_SHORT).show();
+					Log.w("Failed", "signInWithCredential:failure");
+
+					findPreference("google_pref").setEnabled(true);
+
+
+				}
+			}
 		}
 
 	}
