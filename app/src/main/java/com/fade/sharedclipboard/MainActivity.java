@@ -40,6 +40,9 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.preference.PreferenceManager;
 
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.MobileAds;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
@@ -119,6 +122,12 @@ public class MainActivity extends AppCompatActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+
+		//Ad Initialization
+		MobileAds.initialize(this);
+		AdView bannerAd = findViewById(R.id.adBanner);
+		AdRequest adRequest = new AdRequest.Builder().build();
+		bannerAd.loadAd(adRequest);
 
 		//Find Views By Id's
 		syncImage = findViewById(R.id.syncImage);

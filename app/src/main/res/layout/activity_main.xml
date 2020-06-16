@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.drawerlayout.widget.DrawerLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:ads="http://schemas.android.com/apk/res-auto"
     android:id="@+id/drawer_layout"
     android:fitsSystemWindows="true"
     tools:context=".MainActivity">
@@ -16,7 +16,7 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="100dp"
+        android:layout_height="wrap_content"
         android:gravity="bottom"
         android:theme="@style/AppTheme"
         android:orientation="vertical">
@@ -26,6 +26,7 @@
             android:layout_height="wrap_content"
             android:text="@string/shared_clipboard"
             android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
             android:textStyle="italic"
             android:textSize="40sp"
             app:layout_constraintStart_toStartOf="parent"
@@ -199,8 +200,17 @@
 
             <ListView
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
                 android:id="@+id/navListView"/>
+
+            <com.google.android.gms.ads.AdView
+                android:id="@+id/adBanner"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                ads:adSize="BANNER"
+                ads:adUnitId="ca-app-pub-3940256099942544/6300978111"/>
+            <!-- TODO Use proper unit ID ca-app-pub-6257165414757707/7137030169 -->
 
         </LinearLayout>
 
