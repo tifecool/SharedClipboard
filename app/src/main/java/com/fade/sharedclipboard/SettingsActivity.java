@@ -17,7 +17,9 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -47,11 +49,11 @@ import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.auth.UserInfo;
 import com.google.firebase.database.FirebaseDatabase;
 
-import static com.fade.sharedclipboard.LoginActivity.RC_SIGN_IN;
 import static com.fade.sharedclipboard.MainActivity.APP_SHARED_PREF;
 
 public class SettingsActivity extends AppCompatActivity {
 
+	public static final int DELETE_ACCOUNT = 10;
 
 	private static Intent notificationIntent;
 	private static PowerManager pm;
@@ -59,8 +61,12 @@ public class SettingsActivity extends AppCompatActivity {
 	private static Intent fromMainActivity;
 	private static SharedPreferences sharedPreferences;
 	private static SQLiteDatabase database;
-	private Preference linkGooglePref;
 	private static FirebaseUser currentUser;
+	private static String gmailEmail;
+
+	private static boolean passwordProvider = false;
+	private static boolean googleMethod = false;
+
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -120,6 +126,8 @@ public class SettingsActivity extends AppCompatActivity {
 
 		@Override
 		public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
+			final boolean[] googleProvider  = {false};
+
 			setPreferencesFromResource(R.xml.root_preferences, rootKey);
 
 			Preference linkGooglePref = findPreference("google_pref");
@@ -127,13 +135,18 @@ public class SettingsActivity extends AppCompatActivity {
 
 			for (UserInfo userInfo : currentUser.getProviderData()) {
 				if (userInfo.getProviderId().equals(GoogleAuthProvider.PROVIDER_ID)) {
-					Log.d(TAG, "User is signed in with Google");
-					linkGooglePref.setVisible(false);
-					break;
+					Log.d(TAG, "User is signed in with " + userInfo.getProviderId());
+					googleProvider[0] = true;
+					gmailEmail = userInfo.getEmail();
+
+				} else if (userInfo.getProviderId().equals(EmailAuthProvider.PROVIDER_ID)) {
+					Log.d(TAG, "User is signed in with " + userInfo.getProviderId());
+					passwordProvider = true;
 				} else {
-					linkGooglePref.setVisible(true);
+					Log.d(TAG, "User is signed in with " + userInfo.getProviderId());
 				}
 			}
+			linkGooglePref.setVisible(!googleProvider[0]);
 
 			Preference loggedInUserPref = findPreference("logged_in_user_pref");
 			assert loggedInUserPref != null;
@@ -259,7 +272,7 @@ public class SettingsActivity extends AppCompatActivity {
 
 					Intent signInIntent = mGoogleSignInClient.getSignInIntent();
 					preference.setEnabled(false);
-					startActivityForResult(signInIntent, RC_SIGN_IN);
+					startActivityForResult(signInIntent, LoginActivity.RC_SIGN_IN);
 					return true;
 				}
 			});
@@ -277,75 +290,132 @@ public class SettingsActivity extends AppCompatActivity {
 					final EditText email = view.findViewById(R.id.emailDialog);
 					final TextView passwordReq = view.findViewById(R.id.passwordDialogReqText);
 					final TextView emailReq = view.findViewById(R.id.emailDialogReqText);
+					final Button googleMethodButton = view.findViewById(R.id.googleMethodButton);
+					final ImageView googleDeleteButton = view.findViewById(R.id.googleDeleteButton);
+
+					if (googleProvider[0] && passwordProvider) {
+						googleMethodButton.setVisibility(View.VISIBLE);
+
+					} else if (googleProvider[0]) {
+						googleDeleteButton.setVisibility(View.VISIBLE);
+						password.setVisibility(View.GONE);
+						googleMethod = true;
+
+					}
+
+					googleMethodButton.setOnClickListener(new View.OnClickListener() {
+						@Override
+						public void onClick(View v) {
+							if (googleMethod) {
+								googleMethodButton.setText(R.string.use_google_sign_in_method);
+								googleMethod = false;
+
+								googleDeleteButton.setVisibility(View.GONE);
+								password.setVisibility(View.VISIBLE);
+
+							} else {
+								googleMethodButton.setText(R.string.use_password_method);
+								googleMethod = true;
+
+								googleDeleteButton.setVisibility(View.VISIBLE);
+								password.setVisibility(View.GONE);
+							}
+						}
+					});
 
 					final View.OnClickListener deleteDialogueClick = new View.OnClickListener() {
 						@Override
 						public void onClick(View view1) {
 
-							passwordReq.setVisibility(View.GONE);
-							emailReq.setVisibility(View.GONE);
+							if (!googleMethod) {
+								passwordReq.setVisibility(View.GONE);
+								emailReq.setVisibility(View.GONE);
 
-							if (!email.getText().toString().isEmpty() && !password.getText().toString().isEmpty()) {
+								if (!email.getText().toString().isEmpty() && !password.getText().toString().isEmpty()) {
 
-								AuthCredential credential = EmailAuthProvider.getCredential(email.getText().toString(), password.getText().toString());
+									AuthCredential credential = EmailAuthProvider.getCredential(email.getText().toString(), password.getText().toString());
 
-								currentUser.reauthenticate(credential).addOnCompleteListener(new OnCompleteListener<Void>() {
-									@Override
-									public void onComplete(@NonNull Task<Void> task) {
-										if (task.isSuccessful()) {
-											FirebaseDatabase.getInstance().getReference().child("users").child(currentUser.getUid()).removeValue();
-											currentUser.delete();
+									currentUser.reauthenticate(credential).addOnCompleteListener(new OnCompleteListener<Void>() {
+										@Override
+										public void onComplete(@NonNull Task<Void> task) {
+											if (task.isSuccessful()) {
+												FirebaseDatabase.getInstance().getReference().child("users").child(currentUser.getUid()).removeValue();
+												currentUser.delete();
 
-											Intent intent = new Intent(getContext(), LoginActivity.class);
-											intent.putExtra(MainActivity.MAIN_ACTIVITY_INTENT, true);
-											startActivity(intent);
+												Intent intent = new Intent(getContext(), LoginActivity.class);
+												intent.putExtra(MainActivity.MAIN_ACTIVITY_INTENT, true);
+												startActivity(intent);
 
-											StartService.killedProg = true;
-											getActivity().stopService(new Intent(getContext(), ClipboardListenerService.class));
+												StartService.killedProg = true;
+												getActivity().stopService(new Intent(getContext(), ClipboardListenerService.class));
 
-											getActivity().finish();
+												getActivity().finish();
 
-										} else {
-											try {
-												throw task.getException();
+											} else {
+												try {
+													throw task.getException();
 
-											} catch (FirebaseAuthInvalidCredentialsException e) {
-												if (e.getErrorCode().equals("ERROR_INVALID_EMAIL")) {
-													Toast.makeText(getContext(), getString(R.string.invalid_email_format), Toast.LENGTH_SHORT).show();
+												} catch (FirebaseAuthInvalidCredentialsException e) {
+													if (e.getErrorCode().equals("ERROR_INVALID_EMAIL")) {
+														Toast.makeText(getContext(), getString(R.string.invalid_email_format), Toast.LENGTH_SHORT).show();
+														email.requestFocus();
+													} else {
+														Toast.makeText(getContext(), getString(R.string.incorrect_password), Toast.LENGTH_SHORT).show();
+														password.requestFocus();
+													}
+
+													Log.i("ERROR", e.getErrorCode());
+
+												} catch (FirebaseAuthInvalidUserException e) {
 													email.requestFocus();
-												} else {
-													Toast.makeText(getContext(), getString(R.string.incorrect_password), Toast.LENGTH_SHORT).show();
-													password.requestFocus();
+
+												} catch (Exception e) {
+													Toast.makeText(getContext(), R.string.login_failed, Toast.LENGTH_SHORT).show();
+													Log.w("Failed", "signInWithCredential:failure");
+													e.printStackTrace();
 												}
-
-												Log.i("ERROR", e.getErrorCode());
-
-											} catch (FirebaseAuthInvalidUserException e) {
-												email.requestFocus();
-
-											} catch (Exception e) {
-												Toast.makeText(getContext(), R.string.login_failed, Toast.LENGTH_SHORT).show();
-												Log.w("Failed", "signInWithCredential:failure");
-												e.printStackTrace();
+												Log.i("ERROR", task.getException().toString());
 											}
-											Log.i("ERROR", task.getException().toString());
 										}
+									});
+
+								} else {
+									if (password.getText().toString().isEmpty() && password.getText().toString().isEmpty()) {
+
+										passwordReq.setVisibility(View.VISIBLE);
+										emailReq.setVisibility(View.VISIBLE);
+
+									} else if (password.getText().toString().isEmpty()) {
+										passwordReq.setVisibility(View.VISIBLE);
+
+									} else if (email.getText().toString().isEmpty()) {
+										emailReq.setVisibility(View.VISIBLE);
+
 									}
-								});
-
+								}
 							} else {
-								if (password.getText().toString().isEmpty() && password.getText().toString().isEmpty()) {
+								emailReq.setVisibility(View.GONE);
 
-									passwordReq.setVisibility(View.VISIBLE);
-									emailReq.setVisibility(View.VISIBLE);
+								if (!email.getText().toString().isEmpty()) {
+									if (email.getText().toString().equals(gmailEmail)) {
+										GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+												.requestIdToken(getString(R.string.default_web_client_id))
+												.requestEmail()
+												.build();
 
-								} else if (password.getText().toString().isEmpty()) {
-									passwordReq.setVisibility(View.VISIBLE);
+										GoogleSignInClient mGoogleSignInClient = GoogleSignIn.getClient(getContext(), gso);
 
-								} else if (email.getText().toString().isEmpty()) {
+										Intent signInIntent = mGoogleSignInClient.getSignInIntent();
+										startActivityForResult(signInIntent, DELETE_ACCOUNT);
+									} else {
+										Toast.makeText(getContext(), R.string.incorrect_email, Toast.LENGTH_SHORT).show();
+									}
+
+								} else {
 									emailReq.setVisibility(View.VISIBLE);
 
 								}
+
 							}
 
 						}
@@ -399,7 +469,7 @@ public class SettingsActivity extends AppCompatActivity {
 			super.onActivityResult(requestCode, resultCode, data);
 
 			// Result returned from launching the Intent from GoogleSignInClient.getSignInIntent(...);
-			if (requestCode == RC_SIGN_IN) {
+			if (requestCode == LoginActivity.RC_SIGN_IN) {
 				// The Task returned from this call is always completed, no need to attach
 				// a listener.
 				Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
@@ -444,6 +514,65 @@ public class SettingsActivity extends AppCompatActivity {
 
 
 				}
+			}
+
+			if (requestCode == DELETE_ACCOUNT) {
+				// The Task returned from this call is always completed, no need to attach
+				// a listener.
+				Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+
+				try {
+					GoogleSignInAccount account = task.getResult(ApiException.class);
+
+					// Signed in successfully, show authenticated UI.
+					if (account != null) {
+						AuthCredential credential = GoogleAuthProvider.getCredential(account.getIdToken(), null);
+
+						currentUser.reauthenticate(credential).addOnCompleteListener(new OnCompleteListener<Void>() {
+							@Override
+							public void onComplete(@NonNull Task<Void> task) {
+								if (task.isSuccessful()) {
+									FirebaseDatabase.getInstance().getReference().child("users").child(currentUser.getUid()).removeValue();
+									currentUser.delete();
+
+									Intent intent = new Intent(getContext(), LoginActivity.class);
+									intent.putExtra(MainActivity.MAIN_ACTIVITY_INTENT, true);
+									startActivity(intent);
+
+									StartService.killedProg = true;
+									getActivity().stopService(new Intent(getContext(), ClipboardListenerService.class));
+
+									getActivity().finish();
+
+								} else {
+									try {
+										throw task.getException();
+
+									} catch (Exception e) {
+										Toast.makeText(getContext(), R.string.login_failed, Toast.LENGTH_SHORT).show();
+										Log.w("Failed", "signInWithCredential:failure");
+										e.printStackTrace();
+									}
+									Log.i("ERROR", task.getException().toString());
+								}
+							}
+						});
+
+
+					} else {
+						findPreference("google_pref").setEnabled(true);
+					}
+				} catch (ApiException e) {
+					// The ApiException status code indicates the detailed failure reason.
+					// Please refer to the GoogleSignInStatusCodes class reference for more information.
+					Toast.makeText(getContext(), R.string.login_failed, Toast.LENGTH_SHORT).show();
+					Log.w("Failed", "signInWithCredential:failure");
+
+					findPreference("google_pref").setEnabled(true);
+
+
+				}
+
 			}
 		}
 

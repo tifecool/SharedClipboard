@@ -98,5 +98,11 @@
     <string name="link_fail_title">Unable To Link Account</string>
     <string name="link_successful">Account Linked Successfully</string>
     <string name="ok">Okay</string>
+    <string name="stability">To allow the app to have more stability please follow the procedure below</string>
+    <string name="optimisation_instructions">Optimisation Instructions</string>
+    <string name="google_signin_button">Google SignIn Button</string>
+    <string name="use_google_sign_in_method">Use Google Sign-In Method</string>
+    <string name="use_password_method">Use Password Method</string>
+    <string name="incorrect_email">Incorrect Email</string>
 
 </resources>

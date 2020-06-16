@@ -108,6 +108,8 @@ public class ShareActionIntentService extends IntentService {
 						mHandler.post(new DisplayToast(getString(R.string.failed_to_upload)));
 						System.out.print(databaseError.getDetails());
 					}
+					((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).cancel(1);
+
 				}
 			});
 		} catch (Exception e) {
