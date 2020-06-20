@@ -7,7 +7,6 @@ import android.app.PendingIntent;
 import android.app.SearchManager;
 import android.app.Service;
 import android.content.ClipData;
-import android.content.ClipDescription;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
@@ -74,19 +73,19 @@ public class ClipboardListenerService extends Service {
 		changedListener = new ClipboardManager.OnPrimaryClipChangedListener() {
 			@Override
 			public void onPrimaryClipChanged() {
-				if (clipboard.hasPrimaryClip()
-						&& clipboard.getPrimaryClipDescription().hasMimeType(
-						ClipDescription.MIMETYPE_TEXT_PLAIN)) {
-					// Get the very first item from the clip.
-					ClipData.Item item = clipboard.getPrimaryClip().getItemAt(0);
+				try {
+					if (clipboard.hasPrimaryClip()) {
+						// Get the very first item from the clip.
+						ClipData.Item item = clipboard.getPrimaryClip().getItemAt(0);
 
-					Log.i("Clipboard ", item.getText().toString());
-					//Toast.makeText(ClipboardListenerService.this, item.getText().toString(), Toast.LENGTH_SHORT).show();
-					CurrentClip.setCurrentClip(item.getText().toString());
-					if (!ActivityVisibility.isActivityVisible() && !fromDatabase && settingsSharedPref.getBoolean("copied_notification_pref", true))
-						copiedNotification();
+						CurrentClip.setCurrentClip(item.coerceToText(ClipboardListenerService.this).toString());
+						if (!ActivityVisibility.isActivityVisible() && !fromDatabase && settingsSharedPref.getBoolean("copied_notification_pref", true))
+							copiedNotification();
 
-					fromDatabase = false;
+						fromDatabase = false;
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
 			}
 		};
@@ -128,7 +127,7 @@ public class ClipboardListenerService extends Service {
 					.setContentTitle("Clipboard running")
 					.setContentText("Running")
 					.setContentIntent(notifyPendingIntent)
-					.setSmallIcon(R.drawable.demo_icon)
+					.setSmallIcon(R.drawable.ic_running)
 					.build();
 
 			//Prevents Service from dying
@@ -164,7 +163,7 @@ public class ClipboardListenerService extends Service {
 				.setPriority(NotificationManager.IMPORTANCE_LOW)
 				.setCategory(Notification.CATEGORY_SERVICE)
 				.setContentIntent(notifyPendingIntent)
-				.setSmallIcon(R.drawable.demo_icon)
+				.setSmallIcon(R.drawable.ic_running)
 				.build();
 
 		//Prevents service from dying
@@ -267,7 +266,7 @@ public class ClipboardListenerService extends Service {
 					.setContentText(currentClipContent)
 					.setPriority(NotificationManager.IMPORTANCE_DEFAULT)
 					.setContentIntent(notifyPendingIntent)
-					.setSmallIcon(R.drawable.demo_icon);
+					.setSmallIcon(R.drawable.ic_notifications);
 
 			if (above150) {
 				if (currentClipContent.length() > 3000) {
@@ -297,7 +296,7 @@ public class ClipboardListenerService extends Service {
 					.setContentTitle(getString(R.string.new_clip))
 					.setContentText(currentClipContent)
 					.setContentIntent(notifyPendingIntent)
-					.setSmallIcon(R.drawable.demo_icon)
+					.setSmallIcon(R.drawable.ic_notifications)
 					.setSound(Settings.System.DEFAULT_NOTIFICATION_URI);
 
 			if (above150) {
@@ -339,7 +338,7 @@ public class ClipboardListenerService extends Service {
 					.setContentText(currentClipContent)
 					.setPriority(NotificationManager.IMPORTANCE_DEFAULT)
 					.setContentIntent(notifyPendingIntent)
-					.setSmallIcon(R.drawable.demo_icon)
+					.setSmallIcon(R.drawable.ic_notifications)
 					.addAction(R.drawable.ic_search, getString(R.string.copy_text), copyAction());
 
 			onlineNotify = copiedNotifyBuilder.build();
@@ -359,14 +358,14 @@ public class ClipboardListenerService extends Service {
 					.setContentTitle(getString(R.string.new_clip))
 					.setContentText(currentClipContent)
 					.setContentIntent(notifyPendingIntent)
-					.setSmallIcon(R.drawable.demo_icon)
+					.setSmallIcon(R.drawable.ic_notifications)
 					.addAction(R.drawable.ic_search, getString(R.string.copy_text), copyAction())
 					.setSound(Settings.System.DEFAULT_NOTIFICATION_URI);
 
 			onlineNotify = copiedNotifyBuilder.build();
 		}
 
-		manager.notify(1, onlineNotify);
+		manager.notify(3, onlineNotify);
 
 	}
 

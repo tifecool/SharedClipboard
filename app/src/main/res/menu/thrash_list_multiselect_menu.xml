@@ -3,7 +3,7 @@
         <item
             android:id="@+id/thrashRestore"
             android:title="@string/restore"
-            android:icon="@drawable/ic_undo_24dp"/>
+            android:icon="@drawable/ic_undo"/>
 
         <item
             android:id="@+id/thrashDelete"

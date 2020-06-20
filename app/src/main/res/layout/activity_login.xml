@@ -94,7 +94,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.18"
-        android:src="@drawable/demo_icon" />
+        android:src="@drawable/login_ic" />
 
     <TextView
         android:id="@+id/emailReqText"

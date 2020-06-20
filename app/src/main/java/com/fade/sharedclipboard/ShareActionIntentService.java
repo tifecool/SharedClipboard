@@ -88,7 +88,7 @@ public class ShareActionIntentService extends IntentService {
 		clipboard.setPrimaryClip(ClipData.newPlainText(param1, param1));
 		//Creates a toast pop up
 		mHandler.post(new DisplayToast(getString(R.string.copied)));
-		((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).cancel(1);
+		((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).cancel(3);
 
 
 	}

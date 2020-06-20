@@ -14,7 +14,7 @@
         app:layout_constraintBottom_toTopOf="@+id/textView"
         app:layout_constraintEnd_toStartOf="@+id/guideline4"
         app:layout_constraintStart_toStartOf="@+id/guideline3"
-        android:src="@drawable/ic_warning_black_24dp"
+        android:src="@drawable/ic_warning"
         app:layout_constraintDimensionRatio="1:1"/>
 
     <androidx.constraintlayout.widget.Guideline
