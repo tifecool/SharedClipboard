@@ -10,6 +10,15 @@
             app:title="@string/user_email_pref"
             app:key="logged_in_user_pref"/>
 
+        <Preference
+            app:title="@string/chrome_ext_pref"
+            app:summary="@string/chrome_ext_pref_summary"
+            app:icon="@drawable/ic_extension">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://chrome.google.com/webstore/detail/shared-clipboard/nmemiplfpjallomblhoapiajlgpnjloi" />
+        </Preference>
+
         <SwitchPreference
             app:defaultValue="true"
             app:summary="@string/always_running_pref_sum"

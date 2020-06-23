@@ -23,6 +23,8 @@
     <string name="always_running_pref_sum">Listen for copied text</string>
     <string name="battery_optimization_pref">Battery Optimization</string>
     <string name="battery_optimization_pref_sum">Enable for more stable app performance</string>
+    <string name="chrome_ext_pref_summary">Link to Chrome Extension\n(Link Google Account)</string>
+    <string name="chrome_ext_pref">Chrome Extension</string>
 
     <!-- Deletion Preferences -->
     <string name="thrash_pref">Thrash</string>
@@ -104,5 +106,16 @@
     <string name="use_google_sign_in_method">Use Google Sign-In Method</string>
     <string name="use_password_method">Use Password Method</string>
     <string name="incorrect_email">Incorrect Email</string>
+    <string name="first_page_text">The easiest way to share links and texts between devices!</string>
+    <string name="second_page_text">Notified on new copied text, and text from other devices.</string>
+    <string name="third_page_text">Save important text and links for later.\nSynced between devices.</string>
+    <string name="fourth_page_text">Easy to use Chrome Extension!\n(Link in settings)</string>
+    <string name="get_started">Proceed</string>
+    <string name="empty" />
+    <string name="welcome_to">Welcome to</string>
+    <string name="top_icon">Top Icon</string>
+    <string name="center_image">Center Image</string>
+    <string name="center_icon">Center Icon</string>
+
 
 </resources>

@@ -5,6 +5,8 @@
     <color name="colorAccent">@color/design_default_color_primary_dark</color>
     <color name="lightBlue">@color/design_default_color_primary</color>
     <color name="selected">#C4BDBBBB</color>
+    <color name="colorWhite">#ffffff</color>
+
     <color name="transparent">#00000000</color>
     <color name="scGreyLight">#757575</color>
     <color name="scGreyDark">#575757</color>

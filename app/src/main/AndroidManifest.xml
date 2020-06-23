@@ -30,7 +30,9 @@
         <service
             android:name=".ShareActionIntentService"
             android:exported="false" />
-
+        <activity
+            android:name=".IntroActivity"
+            android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".UpdateRequiredActivity"
             android:theme="@style/AppTheme.NoActionBar" />

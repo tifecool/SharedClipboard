@@ -67,6 +67,7 @@ public class MainActivity extends AppCompatActivity {
 	public static final String USERS_EMAIL = "users_email";
 	public static final String APP_SHARED_PREF = "LastUser";
 	public static final String SQL_DATABASE_NAME = "SAVED CLIPS";
+	public static final String FIRST_LAUNCH = "FIRST_LAUNCH";
 
 	private static FirebaseUser currentUser;
 	private static DatabaseReference savedClipRef;
@@ -129,6 +130,8 @@ public class MainActivity extends AppCompatActivity {
 		AdRequest adRequest = new AdRequest.Builder().build();
 		bannerAd.loadAd(adRequest);
 
+		sharedPreferences = this.getSharedPreferences(APP_SHARED_PREF, MODE_PRIVATE);
+
 		//Find Views By Id's
 		syncImage = findViewById(R.id.syncImage);
 		pushPinImage = findViewById(R.id.pushPinImage);
@@ -139,6 +142,11 @@ public class MainActivity extends AppCompatActivity {
 		clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
 
 		currentUser = FirebaseAuth.getInstance().getCurrentUser();
+
+		if (sharedPreferences.getBoolean(FIRST_LAUNCH, true)) {
+			startActivity(new Intent((MainActivity.this), IntroActivity.class));
+			finish();
+		}
 
 		if (currentUser == null) {
 			startActivity(new Intent(MainActivity.this, LoginActivity.class));
@@ -159,7 +167,6 @@ public class MainActivity extends AppCompatActivity {
 
 			//Database Initialization and creation
 			database = this.openOrCreateDatabase(SQL_DATABASE_NAME, MODE_PRIVATE, null);
-			sharedPreferences = this.getSharedPreferences(APP_SHARED_PREF, MODE_PRIVATE);
 			settingsPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
 			String packageName = this.getPackageName();
@@ -558,9 +565,9 @@ public class MainActivity extends AppCompatActivity {
 
 		syncRunner = new Utils.UnixTimeDownloader();
 
-			updateFromFirebase();
-			syncRunner.execute("https://worldtimeapi.org/api/timezone/Etc/UTC");
-			syncImage.startAnimation(AnimationUtils.loadAnimation(MainActivity.this, R.anim.rotate));
+		updateFromFirebase();
+		syncRunner.execute("https://worldtimeapi.org/api/timezone/Etc/UTC");
+		syncImage.startAnimation(AnimationUtils.loadAnimation(MainActivity.this, R.anim.rotate));
 
 	}
 
@@ -731,12 +738,12 @@ public class MainActivity extends AppCompatActivity {
 				public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
 					//Deletion of Permanently Deleted Clips
-					for(String deletedId : deletedIDs){
-						if(dataSnapshot.hasChild(deletedId)){
+					for (String deletedId : deletedIDs) {
+						if (dataSnapshot.hasChild(deletedId)) {
 							deletedClipRef.child(deletedId).removeValue();
 						}
 						SQLiteStatement deleteStatement = database.compileStatement("DELETE FROM DeletedClips WHERE id = ?");
-						deleteStatement.bindString(1,deletedId);
+						deleteStatement.bindString(1, deletedId);
 						deleteStatement.execute();
 					}
 
@@ -767,7 +774,7 @@ public class MainActivity extends AppCompatActivity {
 								}
 							}
 
-							if(deletedIDs.contains(deletedClip.getKey())){
+							if (deletedIDs.contains(deletedClip.getKey())) {
 								continue;
 							}
 
