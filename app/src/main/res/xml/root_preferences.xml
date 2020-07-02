@@ -36,6 +36,21 @@
     <PreferenceCategory
         app:allowDividerAbove="false"
         app:iconSpaceReserved="false"
+        app:title="@string/purchase_title"
+        app:key="purchase_cat"
+        app:isPreferenceVisible="false">
+
+        <Preference
+            app:icon="@drawable/ic_money"
+            app:summary="@string/ads_pref_sum"
+            app:title="@string/ads_pref_title"
+            app:key="remove_ads_pref"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:allowDividerAbove="false"
+        app:iconSpaceReserved="false"
         app:title="@string/notification_title">
 
         <SwitchPreference

@@ -30,6 +30,7 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -40,6 +41,11 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.preference.PreferenceManager;
 
+import com.android.billingclient.api.BillingClient;
+import com.android.billingclient.api.BillingClientStateListener;
+import com.android.billingclient.api.BillingResult;
+import com.android.billingclient.api.Purchase;
+import com.android.billingclient.api.PurchasesUpdatedListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.MobileAds;
@@ -55,6 +61,7 @@ import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
@@ -68,6 +75,9 @@ public class MainActivity extends AppCompatActivity {
 	public static final String APP_SHARED_PREF = "LastUser";
 	public static final String SQL_DATABASE_NAME = "SAVED CLIPS";
 	public static final String FIRST_LAUNCH = "FIRST_LAUNCH";
+	public static final String PURCHASED_EXTRA = "PURCHASED_EXTRA";
+	public static final String PENDING_EXTRA = "PENDING_EXTRA";
+	public static final String PURCHASE_TOKEN_EXTRA = "PURCHASE_TOKEN_EXTRA";
 
 	private static FirebaseUser currentUser;
 	private static DatabaseReference savedClipRef;
@@ -114,9 +124,13 @@ public class MainActivity extends AppCompatActivity {
 	};
 	private ListView navList;
 	private CurrentClip currentClip;
-
-	public MainActivity() {
-	}
+	private DatabaseReference removeAds;
+	private LinearLayout navLinear;
+	private AdView bannerAd;
+	private boolean purchasedExtra = true;
+	private boolean pendingExtra = false;
+	private String purchaseToken;
+	private BillingClient billingClient;
 
 
 	@Override
@@ -126,9 +140,9 @@ public class MainActivity extends AppCompatActivity {
 
 		//Ad Initialization
 		MobileAds.initialize(this);
-		AdView bannerAd = findViewById(R.id.adBanner);
-		AdRequest adRequest = new AdRequest.Builder().build();
-		bannerAd.loadAd(adRequest);
+		bannerAd = findViewById(R.id.adBanner);
+		navLinear = findViewById(R.id.navLinear);
+		navLinear.removeView(bannerAd);
 
 		sharedPreferences = this.getSharedPreferences(APP_SHARED_PREF, MODE_PRIVATE);
 
@@ -181,6 +195,7 @@ public class MainActivity extends AppCompatActivity {
 			userEmail = currentUser.getEmail();
 			savedClipRef = FirebaseDatabase.getInstance().getReference().child("users").child(currentUser.getUid()).child("saved clips");
 			deletedClipRef = FirebaseDatabase.getInstance().getReference().child("users").child(currentUser.getUid()).child("deleted clips");
+			removeAds = FirebaseDatabase.getInstance().getReference().child("users").child(currentUser.getUid()).child("remove ads");
 
 			//Clearing of Arrays
 			savedClipTitles.clear();
@@ -300,6 +315,111 @@ public class MainActivity extends AppCompatActivity {
 					}
 			);
 
+			removeAds.addValueEventListener(new ValueEventListener() {
+				@Override
+				public void onDataChange(@NonNull DataSnapshot snapshot) {
+					if (snapshot.hasChild("state")) {
+						if (Integer.parseInt(snapshot.child("state").getValue().toString()) == Purchase.PurchaseState.PURCHASED) {
+							purchasedExtra = true;
+							navLinear.removeView(bannerAd);
+							Log.d("removeAds", "onDataChange: Purchased");
+						} else if (Integer.parseInt(snapshot.child("state").getValue().toString()) == Purchase.PurchaseState.PENDING) {
+							Log.d("removeAds", "onDataChange: Pending");
+
+
+							final Utils utils = new Utils();
+							pendingExtra = true;
+							purchaseToken = snapshot.child("purchaseToken").getValue().toString();
+
+							PurchasesUpdatedListener purchasesUpdatedListener = new PurchasesUpdatedListener() {
+								@Override
+								public void onPurchasesUpdated(@NonNull BillingResult billingResult, List<Purchase> purchases) {
+									if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK
+											&& purchases != null) {
+										for (Purchase purchase : purchases) {
+											utils.handlePurchase(purchase, billingClient, MainActivity.this);
+										}
+									}
+								}
+							};
+
+							billingClient = BillingClient.newBuilder(MainActivity.this)
+									.setListener(purchasesUpdatedListener)
+									.enablePendingPurchases()
+									.build();
+
+							//Starting connection to Googleplay
+							billingClient.startConnection(new BillingClientStateListener() {
+								@Override
+								public void onBillingSetupFinished(@NonNull BillingResult billingResult) {
+									if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK) {
+										boolean consumed = false;
+
+										List<Purchase> purchasesList = billingClient.queryPurchases(BillingClient.SkuType.INAPP).getPurchasesList();
+
+										//Check for pending purchase or different user
+										if (purchasesList != null && !purchasesList.isEmpty()) {
+											for (final Purchase item : purchasesList) {
+												if (!item.isAcknowledged()) {
+													Log.d("UNCONSUMED", "UNCONSUMED, PurchaseState: " + item.getPurchaseState());
+
+													consumed = false;
+													if (item.getPurchaseState() == Purchase.PurchaseState.PURCHASED && item.getPurchaseToken().equals(purchaseToken)) {
+														utils.handlePurchase(item, billingClient, MainActivity.this);
+													}
+													//Because single item
+													break;
+												} else {
+													Log.d("CONSUMED", "CONSUMED ");
+													consumed = true;
+
+												}
+											}
+										} else {
+											Log.d("CONSUMED", "CONSUMED ");
+											consumed = true;
+										}
+
+										if (consumed) {
+											removeAds.removeValue();
+										}
+									}
+								}
+
+								@Override
+								public void onBillingServiceDisconnected() {
+
+								}
+							});
+							try {
+								navLinear.addView(bannerAd);
+								AdRequest adRequest = new AdRequest.Builder().build();
+								bannerAd.loadAd(adRequest);
+								purchasedExtra = false;
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
+						}
+					} else {
+
+						try {
+							navLinear.addView(bannerAd);
+							AdRequest adRequest = new AdRequest.Builder().build();
+							bannerAd.loadAd(adRequest);
+							purchasedExtra = false;
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
+				}
+
+				@Override
+				public void onCancelled(@NonNull DatabaseError error) {
+
+				}
+
+			});
+
 			//Put current user in shared preference
 			sharedPreferences.edit().putString(LAST_UUID, currentUser.getUid()).apply();
 		}
@@ -318,6 +438,7 @@ public class MainActivity extends AppCompatActivity {
 		if (!serviceRunning(clipboardService.getClass())) {
 			startService(serviceIntent);
 		}
+
 
 		if (updateRequired(this)) {
 			Intent intent = new Intent(MainActivity.this, UpdateRequiredActivity.class);
@@ -442,7 +563,7 @@ public class MainActivity extends AppCompatActivity {
 
 					int i = MainActivity.unixTime.indexOf((long) 0);
 
-					if (onlineClipIDs.contains(savedClipID.get(i))) {
+					/*if (onlineClipIDs.contains(savedClipID.get(i))) {
 						String id = UUID.randomUUID().toString();
 
 						SQLiteStatement updateStatement =
@@ -453,7 +574,7 @@ public class MainActivity extends AppCompatActivity {
 						updateStatement.execute();
 						savedClipID.remove(i);
 						savedClipID.add(i, id);
-					}
+					}*/
 
 
 					MainActivity.unixTime.add(i, unixTime);
@@ -503,6 +624,7 @@ public class MainActivity extends AppCompatActivity {
 				while (dUnixTime.contains((long) 0)) {
 					final int i = dUnixTime.indexOf((long) 0);
 
+/*
 					if (dOnlineClipIDs.contains(dSavedClipID.get(i))) {
 						String id = UUID.randomUUID().toString();
 
@@ -515,6 +637,7 @@ public class MainActivity extends AppCompatActivity {
 						dSavedClipID.remove(i);
 						dSavedClipID.add(i, id);
 					}
+*/
 
 					dUnixTime.add(i, unixTime);
 					dUnixTime.remove(i + 1);
@@ -890,10 +1013,13 @@ public class MainActivity extends AppCompatActivity {
 
 	boolean toSettings = false;
 
-	public void profileClicked(View view) {
+	public void settingsClicked(View view) {
 		Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
 		toSettings = true;
+		intent.putExtra(PURCHASED_EXTRA, purchasedExtra);
 		intent.putExtra(USERS_EMAIL, userEmail);
+		intent.putExtra(PENDING_EXTRA, pendingExtra);
+		intent.putExtra(PURCHASE_TOKEN_EXTRA, purchaseToken);
 		startActivity(intent);
 	}
 

@@ -16,8 +16,6 @@ import androidx.viewpager.widget.ViewPager;
 
 import com.google.android.material.tabs.TabLayout;
 
-import static com.fade.sharedclipboard.MainActivity.APP_SHARED_PREF;
-
 public class IntroActivity extends AppCompatActivity {
 
 	private ViewPager viewPager;
@@ -36,7 +34,7 @@ public class IntroActivity extends AppCompatActivity {
     }*/
 		setContentView(R.layout.activity_intro);
 
-		SharedPreferences sharedPreferences = this.getSharedPreferences(APP_SHARED_PREF, MODE_PRIVATE);
+		SharedPreferences sharedPreferences = this.getSharedPreferences(MainActivity.APP_SHARED_PREF, MODE_PRIVATE);
 		sharedPreferences.edit().putBoolean(MainActivity.FIRST_LAUNCH, false).apply();
 
 		viewPager = findViewById(R.id.pagerIntroSlider);
@@ -80,7 +78,7 @@ public class IntroActivity extends AppCompatActivity {
 						@Override
 						public void onClick(View v) {
 							Intent intent = new Intent(IntroActivity.this, MainActivity.class);
-							intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+							intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
 							startActivity(intent);
 							finish();

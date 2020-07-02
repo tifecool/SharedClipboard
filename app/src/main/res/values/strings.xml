@@ -1,5 +1,9 @@
 <resources>
 
+    <!-- Purchase Preferences -->
+    <string name="ads_pref_sum">Remove ads from this account</string>
+    <string name="ads_pref_title">Remove In-App Ads</string>
+
     <!-- Account Preferences -->
     <string name="account_title">Account</string>
     <string name="google_pref_sum">Linking google account is required for the chrome extension</string>
@@ -16,6 +20,8 @@
     <string name="notification_title">Notifications</string>
     <string name="general_title">General</string>
     <string name="deletion_title">Deletion Settings</string>
+    <string name="purchase_title">Purchase</string>
+
 
     <!-- General Preferences -->
     <string name="user_email_pref">Logged In User</string>
@@ -116,6 +122,14 @@
     <string name="top_icon">Top Icon</string>
     <string name="center_image">Center Image</string>
     <string name="center_icon">Center Icon</string>
+    <string name="canceled_purchase">Purchase was canceled</string>
+    <string name="purchase_pending">Purchase is pending…</string>
+    <string name="successful_purchase">Purchase was successful</string>
+    <string name="purchase_error">Purchase Error Occurred</string>
+    <string name="connection_google_play">Connecting to Google Play Services, Please Wait…</string>
+    <string name="purchase_warning">Purchase Warning</string>
+    <string name="prior_purchase">Detected prior purchase on Google Playstore account that has not yet been activated. This is likely due to a purchase being processed by another user. If activated on this account prior account purchase will be cancelled.</string>
+    <string name="prior_purchase_positive">Activate, cancel on prior account</string>
 
 
 </resources>

@@ -24,13 +24,24 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.Preference;
+import androidx.preference.PreferenceCategory;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.SwitchPreference;
 
+import com.android.billingclient.api.BillingClient;
+import com.android.billingclient.api.BillingClientStateListener;
+import com.android.billingclient.api.BillingFlowParams;
+import com.android.billingclient.api.BillingResult;
+import com.android.billingclient.api.Purchase;
+import com.android.billingclient.api.PurchasesUpdatedListener;
+import com.android.billingclient.api.SkuDetails;
+import com.android.billingclient.api.SkuDetailsParams;
+import com.android.billingclient.api.SkuDetailsResponseListener;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -47,9 +58,16 @@ import com.google.firebase.auth.FirebaseAuthInvalidUserException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.auth.UserInfo;
+import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static com.fade.sharedclipboard.MainActivity.APP_SHARED_PREF;
+import static com.fade.sharedclipboard.MainActivity.PENDING_EXTRA;
+import static com.fade.sharedclipboard.MainActivity.PURCHASED_EXTRA;
+import static com.fade.sharedclipboard.MainActivity.PURCHASE_TOKEN_EXTRA;
 
 public class SettingsActivity extends AppCompatActivity {
 
@@ -66,6 +84,9 @@ public class SettingsActivity extends AppCompatActivity {
 
 	private static boolean passwordProvider = false;
 	private static boolean googleMethod = false;
+	private static BillingClient billingClient;
+	private static Utils utils = new Utils();
+	private static boolean pending = false;
 
 
 	@Override
@@ -76,6 +97,7 @@ public class SettingsActivity extends AppCompatActivity {
 		sharedPreferences = this.getSharedPreferences(APP_SHARED_PREF, MODE_PRIVATE);
 		fromMainActivity = getIntent();
 		currentUser = FirebaseAuth.getInstance().getCurrentUser();
+
 
 		database = this.openOrCreateDatabase(MainActivity.SQL_DATABASE_NAME, MODE_PRIVATE, null);
 
@@ -123,12 +145,179 @@ public class SettingsActivity extends AppCompatActivity {
 
 	public static class SettingsFragment extends PreferenceFragmentCompat {
 		private String TAG = "SettingsTag";
+		private BillingFlowParams billingFlowParams;
 
 		@Override
 		public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
-			final boolean[] googleProvider  = {false};
+			final boolean[] googleProvider = {false};
 
 			setPreferencesFromResource(R.xml.root_preferences, rootKey);
+
+
+			if (!fromMainActivity.getBooleanExtra(PURCHASED_EXTRA, true)) {
+
+				final Preference.OnPreferenceClickListener billingFlow = new Preference.OnPreferenceClickListener() {
+					@Override
+					public boolean onPreferenceClick(Preference preference) {
+						if (pending) {
+							Toast.makeText(getContext(), R.string.purchase_pending, Toast.LENGTH_SHORT).show();
+						} else {
+							billingClient.launchBillingFlow(getActivity(), billingFlowParams);
+						}
+						return true;
+					}
+				};
+
+				pending = fromMainActivity.getBooleanExtra(PENDING_EXTRA,false);
+
+				PreferenceCategory purchaseCat = findPreference("purchase_cat");
+				assert purchaseCat != null;
+				purchaseCat.setVisible(true);
+
+				final Preference removeAdsPref = findPreference("remove_ads_pref");
+				assert removeAdsPref != null;
+
+				final SkuDetails[] skuDetails = new SkuDetails[1];
+
+				//Ran on purchase done
+				// Handle an error caused by a user cancelling the purchase flow.
+				// Handle any other error codes.
+				PurchasesUpdatedListener purchasesUpdatedListener = new PurchasesUpdatedListener() {
+					@Override
+					public void onPurchasesUpdated(@NonNull BillingResult billingResult, List<Purchase> purchases) {
+						if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK
+								&& purchases != null) {
+							for (Purchase purchase : purchases) {
+								pending = !utils.handlePurchase(purchase, billingClient, getContext());
+
+								if (!pending) {
+									PreferenceCategory purchaseCat = findPreference("purchase_cat");
+									assert purchaseCat != null;
+									purchaseCat.setVisible(false);
+								}
+							}
+						} else if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.USER_CANCELED) {
+							Toast.makeText(getContext(), R.string.canceled_purchase, Toast.LENGTH_SHORT).show();
+						} else {
+							Toast.makeText(getContext(), R.string.purchase_error, Toast.LENGTH_SHORT).show();
+						}
+					}
+				};
+
+				//Initializing billingClient
+				billingClient = BillingClient.newBuilder(getActivity())
+						.setListener(purchasesUpdatedListener)
+						.enablePendingPurchases()
+						.build();
+
+				if (billingClient.isReady()) {
+					if (billingFlowParams != null) {
+						removeAdsPref.setOnPreferenceClickListener(billingFlow);
+					}
+				} else {
+					removeAdsPref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+						@Override
+						public boolean onPreferenceClick(Preference preference) {
+							Toast.makeText(getContext(), R.string.connection_google_play, Toast.LENGTH_SHORT).show();
+							return true;
+						}
+					});
+				}
+
+				//Starting connection to Googleplay
+				billingClient.startConnection(new BillingClientStateListener() {
+					@Override
+					public void onBillingSetupFinished(@NonNull BillingResult billingResult) {
+						if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK) {
+							List<String> skuList = new ArrayList<>();
+							skuList.add("remove_ads");
+
+							SkuDetailsParams.Builder params = SkuDetailsParams.newBuilder();
+							params.setSkusList(skuList).setType(BillingClient.SkuType.INAPP);
+
+							billingClient.querySkuDetailsAsync(params.build(), new SkuDetailsResponseListener() {
+								@Override
+								public void onSkuDetailsResponse(@NonNull BillingResult billingResult, @Nullable List<SkuDetails> list) {
+									if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK && list != null && !list.isEmpty()) {
+										skuDetails[0] = list.get(0);
+
+										billingFlowParams = BillingFlowParams.newBuilder()
+												.setSkuDetails(skuDetails[0])
+												.build();
+
+
+										List<Purchase> purchasesList = billingClient.queryPurchases(BillingClient.SkuType.INAPP).getPurchasesList();
+
+										boolean consumed = false;
+										//Check for pending purchase or different user
+										if (purchasesList != null && !purchasesList.isEmpty()) {
+											for (final Purchase item : purchasesList) {
+												if (!item.isAcknowledged()) {
+													consumed = false;
+													if (item.getPurchaseState() == Purchase.PurchaseState.PURCHASED) {
+															if (pending && item.getPurchaseToken().equals(fromMainActivity.getStringExtra(PURCHASE_TOKEN_EXTRA))) {
+																pending = !utils.handlePurchase(item, billingClient, getContext());
+
+																if (!pending) {
+																	PreferenceCategory purchaseCat = findPreference("purchase_cat");
+																	assert purchaseCat != null;
+																	purchaseCat.setVisible(false);
+																}
+															} else {
+																new AlertDialog.Builder(getContext())
+																		.setIcon(R.drawable.warning_bright)
+																		.setMessage(R.string.prior_purchase)
+																		.setPositiveButton(R.string.prior_purchase_positive, new DialogInterface.OnClickListener() {
+																			@Override
+																			public void onClick(DialogInterface dialogInterface, int i) {
+																				pending = !utils.handlePurchase(item, billingClient, getContext());
+
+																				if (!pending) {
+																					PreferenceCategory purchaseCat = findPreference("purchase_cat");
+																					assert purchaseCat != null;
+																					purchaseCat.setVisible(false);
+																				}
+
+																			}
+																		}).setNegativeButton(R.string.cancel, null)
+																		.setTitle(R.string.purchase_warning)
+																		.show();
+															}
+													}
+													//Because single item
+													break;
+												} else {
+													consumed = true;
+												}
+											}
+										} else {
+											consumed = true;
+										}
+
+										if (consumed) {
+											pending = false;
+											DatabaseReference removeAds = FirebaseDatabase.getInstance().getReference().child("users").child(currentUser.getUid()).child("remove ads");
+											removeAds.removeValue();
+										}
+
+										removeAdsPref.setOnPreferenceClickListener(billingFlow);
+
+									}
+								}
+							});
+
+						}
+					}
+
+					@Override
+					public void onBillingServiceDisconnected() {
+
+					}
+				});
+
+
+			}
+
 
 			Preference linkGooglePref = findPreference("google_pref");
 			assert linkGooglePref != null;

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.provider.Settings;
@@ -12,8 +13,18 @@ import android.view.View;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
+import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+
+import com.android.billingclient.api.BillingClient;
+import com.android.billingclient.api.BillingResult;
+import com.android.billingclient.api.ConsumeParams;
+import com.android.billingclient.api.ConsumeResponseListener;
+import com.android.billingclient.api.Purchase;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -23,6 +34,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import static com.fade.sharedclipboard.ClipboardListenerService.currentUser;
 import static com.fade.sharedclipboard.MainActivity.DONT_SHOW_CHECK;
 
 class Utils {
@@ -92,7 +104,7 @@ class Utils {
 
 		Long unixTime = null;
 
-		private Long getUnixTime(){
+		private Long getUnixTime() {
 			return unixTime;
 		}
 
@@ -115,10 +127,10 @@ class Utils {
 				int data = reader.read(currentChars);//Stores bytes in array
 
 				while (data != -1) {
-					string.append(currentChars,0,data);//adds bytes to string, no offset, how many chars to be added
+					string.append(currentChars, 0, data);//adds bytes to string, no offset, how many chars to be added
 					data = reader.read(currentChars);
 
-					if(string.length()> 600)//Check is particular to this app
+					if (string.length() > 600)//Check is particular to this app
 						return null;
 				}
 
@@ -142,6 +154,44 @@ class Utils {
 			} catch (JSONException e) {
 				e.printStackTrace();
 			}
+		}
+	}
+
+	boolean handlePurchase(Purchase purchase, BillingClient billingClient, final Context context) {
+
+		DatabaseReference removeAds = FirebaseDatabase.getInstance().getReference().child("users").child(currentUser.getUid()).child("remove ads");
+
+		removeAds.child("purchaseToken").setValue(purchase.getPurchaseToken());
+		removeAds.child("orderTime").setValue(purchase.getPurchaseTime());
+		removeAds.child("state").setValue(purchase.getPurchaseState());
+
+		if (purchase.getPurchaseState() == Purchase.PurchaseState.PURCHASED) {
+
+			ConsumeParams consumeParams =
+					ConsumeParams.newBuilder()
+							.setPurchaseToken(purchase.getPurchaseToken())
+							.build();
+
+			ConsumeResponseListener listener = new ConsumeResponseListener() {
+				@Override
+				public void onConsumeResponse(@NonNull BillingResult billingResult, @NonNull String purchaseToken) {
+					try {
+						Toast.makeText(context, R.string.successful_purchase, Toast.LENGTH_SHORT).show();
+					}catch (Exception e){
+						e.printStackTrace();
+					}
+				}
+			};
+
+			billingClient.consumeAsync(consumeParams, listener);
+			return true;
+		} else {
+			try {
+				Toast.makeText(context, R.string.purchase_pending, Toast.LENGTH_SHORT).show();
+			} catch (Resources.NotFoundException e) {
+				e.printStackTrace();
+			}
+			return false;
 		}
 	}
 

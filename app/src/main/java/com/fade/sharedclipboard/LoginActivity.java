@@ -165,7 +165,7 @@ public class LoginActivity extends AppCompatActivity {
 		confPass = findViewById(R.id.confPassText);
 
 		intent = new Intent(this, MainActivity.class);
-		intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+		intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
 
 		signInButton.setOnClickListener(signInClick);
 
@@ -369,7 +369,7 @@ public class LoginActivity extends AppCompatActivity {
 				// The ApiException status code indicates the detailed failure reason.
 				// Please refer to the GoogleSignInStatusCodes class reference for more information.
 				Toast.makeText(LoginActivity.this, R.string.login_failed, Toast.LENGTH_SHORT).show();
-				Log.w("Failed", "signInWithCredential:failure");
+				Log.w("Failed", "signInWithCredential:failure", e);
 
 				disableButtons(false);
 

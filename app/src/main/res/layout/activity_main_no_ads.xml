@@ -4,7 +4,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:ads="http://schemas.android.com/apk/res-auto"
     android:id="@+id/drawer_layout"
     android:fitsSystemWindows="true"
     tools:context=".MainActivity"
@@ -195,8 +194,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:id="@+id/navLinear">
+            android:orientation="vertical">
 
             <include layout="@layout/nav_header"/>
 
@@ -205,15 +203,6 @@
                 android:layout_height="0dp"
                 android:layout_weight="1"
                 android:id="@+id/navListView"/>
-
-            <com.google.android.gms.ads.AdView
-                android:id="@+id/adBanner"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                ads:adSize="BANNER"
-                ads:adUnitId="ca-app-pub-3940256099942544/6300978111"/>
-            <!-- TODO Use proper unit ID ca-app-pub-6257165414757707/7137030169
-                    test ID ca-app-pub-3940256099942544/6300978111-->
 
         </LinearLayout>
 
