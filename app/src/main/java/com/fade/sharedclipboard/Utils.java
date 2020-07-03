@@ -1,5 +1,6 @@
 package com.fade.sharedclipboard;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -10,6 +11,8 @@ import android.os.Build;
 import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
@@ -157,6 +160,14 @@ class Utils {
 		}
 	}
 
+	void changeStatusBarColor(Activity activity, int color) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+			Window window = activity.getWindow();
+			window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+			window.setStatusBarColor(color);
+		}
+	}
+
 	boolean handlePurchase(Purchase purchase, BillingClient billingClient, final Context context) {
 
 		DatabaseReference removeAds = FirebaseDatabase.getInstance().getReference().child("users").child(currentUser.getUid()).child("remove ads");
@@ -177,7 +188,7 @@ class Utils {
 				public void onConsumeResponse(@NonNull BillingResult billingResult, @NonNull String purchaseToken) {
 					try {
 						Toast.makeText(context, R.string.successful_purchase, Toast.LENGTH_SHORT).show();
-					}catch (Exception e){
+					} catch (Exception e) {
 						e.printStackTrace();
 					}
 				}
@@ -195,95 +206,6 @@ class Utils {
 		}
 	}
 
-/*
-	public Object getJsonValue(String jsonString){
-		PageDownloader downloader = new PageDownloader();
-		Object object = null;
-		try {
-
-			String jsonData = downloader.execute("http://worldtimeapi.org/api/timezone/Etc/UTC").get();
-			if(jsonData == null) //Check is particular to this app
-				return null;
-
-			JSONObject jsonObject = new JSONObject(jsonData);
-			object = jsonObject.getLong(jsonString);
-
-		} catch (ExecutionException e) {
-			e.printStackTrace();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-
-		return object;
-	}
-*/
-
-/*Toast toast = Toast.makeText(MainActivity.this, userEmail, Toast.LENGTH_SHORT);
-		toast.setGravity(Gravity.TOP, view.getLeft() - view.getWidth() / 2 - toast.getView().getWidth() / 2, view.getBottom());
-		toast.show();*/
-
-	/*private boolean sqlIsEmpty(SQLiteDatabase database, String tableName) {
-
-		Cursor mcursor = database.rawQuery("SELECT count(*) FROM " + tableName, null);
-		mcursor.moveToFirst();
-		int icount = mcursor.getInt(0);
-		mcursor.close();
-		return icount <= 0;
-	}*/
-
-	//VERY USEFUL CODE FOR REMOVING FOCUS ON EDITTEXT
-	/*@Override
-	public boolean dispatchTouchEvent(MotionEvent ev) {
-		if (ev.getAction() == MotionEvent.ACTION_DOWN) {
-			View v = getCurrentFocus();
-			if (v instanceof EditText) {
-				Rect outRect = new Rect();
-				v.getGlobalVisibleRect(outRect);
-				if (!outRect.contains((int) ev.getRawX(), (int) ev.getRawY())) {
-					Log.d("focus", "touchevent");
-					v.clearFocus();
-					InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-					imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
-				}
-			}
-		}
-		return super.dispatchTouchEvent(ev);
-	}*/
-
-	/*
-	public static class PageDownloader extends AsyncTask<String, Void, String> {
-
-
-		@Override
-		protected String doInBackground(String... urls) {
-			StringBuilder string = new StringBuilder();
-
-			try {
-
-				URL url = new URL(urls[0]);
-				HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-				InputStream is = connection.getInputStream();
-				InputStreamReader reader = new InputStreamReader(is);
-				int maxBytesToRead = 400; //no of bytes read at once
-				char[] currentChars = new char[maxBytesToRead]; // Array holds currently read bytes
-				int data = reader.read(currentChars);//Stores bytes in array
-
-				while (data != -1) {
-					string.append(currentChars,0,data);//adds bytes to string, no offset, how many chars to be added
-					data = reader.read(currentChars);
-
-				}
-
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-
-			return string.toString();
-		}
-	}
-*/
 }
 
 

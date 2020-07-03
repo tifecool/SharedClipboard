@@ -42,10 +42,7 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.preference.PreferenceManager;
 
 import com.android.billingclient.api.BillingClient;
-import com.android.billingclient.api.BillingClientStateListener;
-import com.android.billingclient.api.BillingResult;
 import com.android.billingclient.api.Purchase;
-import com.android.billingclient.api.PurchasesUpdatedListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.MobileAds;
@@ -61,7 +58,6 @@ import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
@@ -158,8 +154,7 @@ public class MainActivity extends AppCompatActivity {
 		currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
 		if (sharedPreferences.getBoolean(FIRST_LAUNCH, true)) {
-			startActivity(new Intent((MainActivity.this), IntroActivity.class));
-			finish();
+			startActivity(new Intent(MainActivity.this, IntroActivity.class));
 		}
 
 		if (currentUser == null) {
@@ -326,12 +321,11 @@ public class MainActivity extends AppCompatActivity {
 						} else if (Integer.parseInt(snapshot.child("state").getValue().toString()) == Purchase.PurchaseState.PENDING) {
 							Log.d("removeAds", "onDataChange: Pending");
 
-
-							final Utils utils = new Utils();
 							pendingExtra = true;
+							purchasedExtra = false;
 							purchaseToken = snapshot.child("purchaseToken").getValue().toString();
 
-							PurchasesUpdatedListener purchasesUpdatedListener = new PurchasesUpdatedListener() {
+							/*PurchasesUpdatedListener purchasesUpdatedListener = new PurchasesUpdatedListener() {
 								@Override
 								public void onPurchasesUpdated(@NonNull BillingResult billingResult, List<Purchase> purchases) {
 									if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK
@@ -390,7 +384,7 @@ public class MainActivity extends AppCompatActivity {
 								public void onBillingServiceDisconnected() {
 
 								}
-							});
+							});*/
 							try {
 								navLinear.addView(bannerAd);
 								AdRequest adRequest = new AdRequest.Builder().build();
@@ -401,6 +395,8 @@ public class MainActivity extends AppCompatActivity {
 							}
 						}
 					} else {
+						purchasedExtra = false;
+						pendingExtra = false;
 
 						try {
 							navLinear.addView(bannerAd);

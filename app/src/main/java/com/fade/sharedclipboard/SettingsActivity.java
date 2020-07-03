@@ -84,9 +84,6 @@ public class SettingsActivity extends AppCompatActivity {
 
 	private static boolean passwordProvider = false;
 	private static boolean googleMethod = false;
-	private static BillingClient billingClient;
-	private static Utils utils = new Utils();
-	private static boolean pending = false;
 
 
 	@Override
@@ -146,6 +143,21 @@ public class SettingsActivity extends AppCompatActivity {
 	public static class SettingsFragment extends PreferenceFragmentCompat {
 		private String TAG = "SettingsTag";
 		private BillingFlowParams billingFlowParams;
+		private BillingClient billingClient;
+		private Utils utils = new Utils();
+		private boolean pending = false;
+		private String purchaseToken = null;
+		private boolean launched = false;
+
+		@Override
+		public void onResume() {
+			super.onResume();
+
+			if(!fromMainActivity.getBooleanExtra(PURCHASE_TOKEN_EXTRA,true)){
+				pending = fromMainActivity.getBooleanExtra(PENDING_EXTRA,false);
+				purchaseToken = fromMainActivity.getStringExtra(PURCHASE_TOKEN_EXTRA);
+			}
+		}
 
 		@Override
 		public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
@@ -163,12 +175,14 @@ public class SettingsActivity extends AppCompatActivity {
 							Toast.makeText(getContext(), R.string.purchase_pending, Toast.LENGTH_SHORT).show();
 						} else {
 							billingClient.launchBillingFlow(getActivity(), billingFlowParams);
+							launched = true;
 						}
 						return true;
 					}
 				};
 
-				pending = fromMainActivity.getBooleanExtra(PENDING_EXTRA,false);
+				pending = fromMainActivity.getBooleanExtra(PENDING_EXTRA, false);
+				purchaseToken = fromMainActivity.getStringExtra(PURCHASE_TOKEN_EXTRA);
 
 				PreferenceCategory purchaseCat = findPreference("purchase_cat");
 				assert purchaseCat != null;
@@ -188,18 +202,24 @@ public class SettingsActivity extends AppCompatActivity {
 						if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK
 								&& purchases != null) {
 							for (Purchase purchase : purchases) {
-								pending = !utils.handlePurchase(purchase, billingClient, getContext());
+								if(purchase.getPurchaseToken().equals(purchaseToken) || launched) {
+									pending = !utils.handlePurchase(purchase, billingClient, getContext());
+									purchaseToken = null;
+									launched = false;
 
-								if (!pending) {
-									PreferenceCategory purchaseCat = findPreference("purchase_cat");
-									assert purchaseCat != null;
-									purchaseCat.setVisible(false);
+									if (!pending) {
+										PreferenceCategory purchaseCat = findPreference("purchase_cat");
+										assert purchaseCat != null;
+										purchaseCat.setVisible(false);
+									}
 								}
 							}
 						} else if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.USER_CANCELED) {
 							Toast.makeText(getContext(), R.string.canceled_purchase, Toast.LENGTH_SHORT).show();
+							launched = false;
 						} else {
 							Toast.makeText(getContext(), R.string.purchase_error, Toast.LENGTH_SHORT).show();
+							launched = false;
 						}
 					}
 				};
@@ -255,34 +275,39 @@ public class SettingsActivity extends AppCompatActivity {
 												if (!item.isAcknowledged()) {
 													consumed = false;
 													if (item.getPurchaseState() == Purchase.PurchaseState.PURCHASED) {
-															if (pending && item.getPurchaseToken().equals(fromMainActivity.getStringExtra(PURCHASE_TOKEN_EXTRA))) {
-																pending = !utils.handlePurchase(item, billingClient, getContext());
+														if (pending && item.getPurchaseToken().equals(purchaseToken)) {
+															pending = !utils.handlePurchase(item, billingClient, getContext());
 
-																if (!pending) {
-																	PreferenceCategory purchaseCat = findPreference("purchase_cat");
-																	assert purchaseCat != null;
-																	purchaseCat.setVisible(false);
-																}
-															} else {
-																new AlertDialog.Builder(getContext())
-																		.setIcon(R.drawable.warning_bright)
-																		.setMessage(R.string.prior_purchase)
-																		.setPositiveButton(R.string.prior_purchase_positive, new DialogInterface.OnClickListener() {
-																			@Override
-																			public void onClick(DialogInterface dialogInterface, int i) {
-																				pending = !utils.handlePurchase(item, billingClient, getContext());
-
-																				if (!pending) {
-																					PreferenceCategory purchaseCat = findPreference("purchase_cat");
-																					assert purchaseCat != null;
-																					purchaseCat.setVisible(false);
-																				}
-
-																			}
-																		}).setNegativeButton(R.string.cancel, null)
-																		.setTitle(R.string.purchase_warning)
-																		.show();
+															if (!pending) {
+																PreferenceCategory purchaseCat = findPreference("purchase_cat");
+																assert purchaseCat != null;
+																purchaseCat.setVisible(false);
 															}
+														} else {
+															new AlertDialog.Builder(getContext())
+																	.setIcon(R.drawable.warning_bright)
+																	.setMessage(R.string.prior_purchase)
+																	.setPositiveButton(R.string.prior_purchase_positive, new DialogInterface.OnClickListener() {
+																		@Override
+																		public void onClick(DialogInterface dialogInterface, int i) {
+																			pending = !utils.handlePurchase(item, billingClient, getContext());
+
+																			if (!pending) {
+																				PreferenceCategory purchaseCat = findPreference("purchase_cat");
+																				assert purchaseCat != null;
+																				purchaseCat.setVisible(false);
+																			}
+
+																		}
+																	}).setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+																@Override
+																public void onClick(DialogInterface dialogInterface, int i) {
+																	pending = true;
+																}
+															})
+																	.setTitle(R.string.purchase_warning)
+																	.show();
+														}
 													}
 													//Because single item
 													break;
