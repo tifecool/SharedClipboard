@@ -22,6 +22,14 @@
     <string name="deletion_title">Deletion Settings</string>
     <string name="purchase_title">Purchase</string>
 
+    <!-- Extensions Preferences -->
+    <string name="extensions_title">Extensions (Link Google Account)</string>
+    <string name="chrome_ext_pref_summary">Link to Chrome Extension</string>
+    <string name="chrome_ext_pref">Chrome Extension</string>
+    <string name="edge_ext_pref_summary">Link to Edge Extension</string>
+    <string name="edge_ext_pref">Edge Extension</string>
+    <string name="firefox_ext_pref_summary">(Coming Soon)</string>
+    <string name="firefox_ext_pref">Firefox Extension</string>
 
     <!-- General Preferences -->
     <string name="user_email_pref">Logged In User</string>
@@ -29,8 +37,6 @@
     <string name="always_running_pref_sum">Listen for copied text</string>
     <string name="battery_optimization_pref">Battery Optimization</string>
     <string name="battery_optimization_pref_sum">Enable for more stable app performance</string>
-    <string name="chrome_ext_pref_summary">Link to Chrome Extension\n(Link Google Account)</string>
-    <string name="chrome_ext_pref">Chrome Extension</string>
 
     <!-- Deletion Preferences -->
     <string name="thrash_pref">Thrash</string>

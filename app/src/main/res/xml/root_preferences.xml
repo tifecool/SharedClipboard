@@ -1,5 +1,5 @@
-<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:android="http://schemas.android.com/apk/res/android">
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory
         app:allowDividerAbove="true"
@@ -7,44 +7,65 @@
         app:title="@string/general_title">
 
         <Preference
-            app:title="@string/user_email_pref"
-            app:key="logged_in_user_pref"/>
-
-        <Preference
-            app:title="@string/chrome_ext_pref"
-            app:summary="@string/chrome_ext_pref_summary"
-            app:icon="@drawable/ic_extension">
-        <intent
-            android:action="android.intent.action.VIEW"
-            android:data="https://chrome.google.com/webstore/detail/shared-clipboard/nmemiplfpjallomblhoapiajlgpnjloi" />
-        </Preference>
+            app:key="logged_in_user_pref"
+            app:title="@string/user_email_pref" />
 
         <SwitchPreference
             app:defaultValue="true"
+            app:key="always_running_pref"
             app:summary="@string/always_running_pref_sum"
-            app:title="@string/always_running_pref"
-            app:key="always_running_pref"/>
+            app:title="@string/always_running_pref" />
 
         <Preference
             app:icon="@drawable/warning_bright"
             app:isPreferenceVisible="false"
+            app:key="battery_optimization_pref"
             app:summary="@string/battery_optimization_pref_sum"
-            app:title="@string/battery_optimization_pref"
-            app:key="battery_optimization_pref"/>
+            app:title="@string/battery_optimization_pref" />
     </PreferenceCategory>
 
     <PreferenceCategory
         app:allowDividerAbove="false"
         app:iconSpaceReserved="false"
-        app:title="@string/purchase_title"
+        app:title="@string/extensions_title">
+
+        <Preference
+            app:icon="@drawable/ic_chrome"
+            app:summary="@string/chrome_ext_pref_summary"
+            app:title="@string/chrome_ext_pref">
+            <intent
+                android:action="android.intent.action.VIEW"
+                android:data="https://chrome.google.com/webstore/detail/shared-clipboard/nmemiplfpjallomblhoapiajlgpnjloi" />
+        </Preference>
+
+        <Preference
+            app:icon="@drawable/ic_edge"
+            app:summary="@string/edge_ext_pref_summary"
+            app:title="@string/edge_ext_pref">
+            <intent
+                android:action="android.intent.action.VIEW"
+                android:data="https://microsoftedge.microsoft.com/addons/detail/shared-clipboard/geohhkdenpidlmhghpfcpgffnnolofbp" />
+        </Preference>
+
+        <Preference
+            app:icon="@drawable/ic_firefox"
+            app:summary="@string/firefox_ext_pref_summary"
+            app:title="@string/firefox_ext_pref">
+        </Preference>
+
+    </PreferenceCategory>
+    <PreferenceCategory
+        app:allowDividerAbove="false"
+        app:iconSpaceReserved="false"
+        app:isPreferenceVisible="false"
         app:key="purchase_cat"
-        app:isPreferenceVisible="false">
+        app:title="@string/purchase_title">
 
         <Preference
             app:icon="@drawable/ic_money"
+            app:key="remove_ads_pref"
             app:summary="@string/ads_pref_sum"
-            app:title="@string/ads_pref_title"
-            app:key="remove_ads_pref"/>
+            app:title="@string/ads_pref_title" />
 
     </PreferenceCategory>
 
@@ -55,20 +76,20 @@
 
         <SwitchPreference
             app:defaultValue="true"
+            app:key="copied_notification_pref"
             app:summary="@string/copied_notification_pref_sum"
-            app:title="@string/copied_notification_pref"
-            app:key="copied_notification_pref"/>
+            app:title="@string/copied_notification_pref" />
 
         <SwitchPreference
             app:defaultValue="true"
+            app:key="database_notification_pref"
             app:summary="@string/database_notification_pref_sum"
-            app:title="@string/database_notification_pref"
-            app:key="database_notification_pref"/>
+            app:title="@string/database_notification_pref" />
 
         <Preference
+            app:key="notification_settings"
             app:layout="@layout/notification_preference_text"
-            app:title="@string/system_notifications"
-            app:key="notification_settings"/>
+            app:title="@string/system_notifications" />
     </PreferenceCategory>
 
     <PreferenceCategory
@@ -77,19 +98,19 @@
         app:title="@string/deletion_title">
 
         <Preference
+            app:icon="@drawable/delete_grey"
             app:summary="@string/thrash_pref_sum"
-            app:title="@string/thrash_pref"
-            app:icon="@drawable/delete_grey">
+            app:title="@string/thrash_pref">
             <intent
-                android:targetPackage="@string/package_name"
-                android:targetClass="@string/package_name_thrash_activity"/>
+                android:targetClass="@string/package_name_thrash_activity"
+                android:targetPackage="@string/package_name" />
         </Preference>
 
         <Preference
-            app:summary="@string/delete_thrash_pref_sum"
-            app:title="@string/delete_thrash_pref"
+            app:icon="@drawable/delete_red"
             app:key="delete_all_pref"
-            app:icon="@drawable/delete_red"/>
+            app:summary="@string/delete_thrash_pref_sum"
+            app:title="@string/delete_thrash_pref" />
 
     </PreferenceCategory>
 
@@ -99,16 +120,16 @@
         app:title="@string/account_title">
 
         <Preference
-            app:title="@string/google_pref_title"
             app:icon="@drawable/googleg_standard_color_18"
-            app:summary="@string/google_pref_sum"
             app:isPreferenceVisible="false"
-            app:key="google_pref"/>
+            app:key="google_pref"
+            app:summary="@string/google_pref_sum"
+            app:title="@string/google_pref_title" />
 
         <Preference
+            app:key="delete_account_pref"
             app:layout="@layout/delete_account_preference_text"
-            app:title="Delete Account"
-            app:key="delete_account_pref"/>
+            app:title="Delete Account" />
 
 
     </PreferenceCategory>
