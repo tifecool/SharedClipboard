@@ -178,6 +178,11 @@ public class MainActivity extends AppCompatActivity {
 			database = this.openOrCreateDatabase(SQL_DATABASE_NAME, MODE_PRIVATE, null);
 			settingsPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
+			if(Build.VERSION.SDK_INT == Build.VERSION_CODES.Q){
+				Toast.makeText(this,"External Clipboard Listening Disabled on Android 10.",Toast.LENGTH_SHORT).show();
+				settingsPreferences.edit().putBoolean("copied_notification_pref",false).apply();
+			}
+
 			String packageName = this.getPackageName();
 			PowerManager pm = (PowerManager) this.getSystemService(Context.POWER_SERVICE);
 

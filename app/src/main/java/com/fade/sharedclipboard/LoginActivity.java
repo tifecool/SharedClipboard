@@ -399,6 +399,10 @@ public class LoginActivity extends AppCompatActivity {
 							// If sign in fails, display a message to the user.
 							Toast.makeText(LoginActivity.this, R.string.login_failed, Toast.LENGTH_SHORT).show();
 							Log.w("Failed", "signInWithCredential:failure", task.getException());
+
+							if(mGoogleSignInClient != null){
+								mGoogleSignInClient.signOut();
+							}
 						}
 
 						disableButtons(false);

@@ -69,7 +69,7 @@ public class IntroActivity extends AppCompatActivity {
 						@Override
 						public void onClick(View v) {
 							Intent intent = new Intent(IntroActivity.this, MainActivity.class);
-							intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+							intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
 
 							startActivity(intent);
 							finish();

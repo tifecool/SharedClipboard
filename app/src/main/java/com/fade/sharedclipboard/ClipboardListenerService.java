@@ -78,9 +78,14 @@ public class ClipboardListenerService extends Service {
 						// Get the very first item from the clip.
 						ClipData.Item item = clipboard.getPrimaryClip().getItemAt(0);
 
-						CurrentClip.setCurrentClip(item.coerceToText(ClipboardListenerService.this).toString());
-						if (!ActivityVisibility.isActivityVisible() && !fromDatabase && settingsSharedPref.getBoolean("copied_notification_pref", true))
+						String string = item.coerceToText(ClipboardListenerService.this).toString();
+						CurrentClip.setCurrentClip(string);
+						Log.d(TAG, "onPrimaryClipChanged: "+string);
+
+						if (!ActivityVisibility.isActivityVisible() && !fromDatabase && settingsSharedPref.getBoolean("copied_notification_pref", true)) {
 							copiedNotification();
+							Log.d(TAG, "onPrimaryClipChanged: COPIED");
+						}
 
 						fromDatabase = false;
 					}

@@ -166,6 +166,12 @@ public class SettingsActivity extends AppCompatActivity {
 			setPreferencesFromResource(R.xml.root_preferences, rootKey);
 
 
+			if(Build.VERSION.SDK_INT == Build.VERSION_CODES.Q){
+				findPreference("copied_notification_pref").setVisible(false);
+			}
+
+
+
 			if (!fromMainActivity.getBooleanExtra(PURCHASED_EXTRA, true)) {
 
 				final Preference.OnPreferenceClickListener billingFlow = new Preference.OnPreferenceClickListener() {
