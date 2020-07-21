@@ -128,8 +128,8 @@
 
         <Preference
             app:icon="@drawable/icon_launcher"
-            app:title="View Intro Page"
-            app:summary="View beginning intro page">
+            app:title="@string/intro_pref_title"
+            app:summary="@string/intro_pref_sum">
             <intent
                 android:targetPackage="com.fade.sharedclipboard"
                 android:targetClass="com.fade.sharedclipboard.IntroActivity"/>
