@@ -127,6 +127,16 @@
             app:title="@string/google_pref_title" />
 
         <Preference
+            app:icon="@drawable/icon_launcher"
+            app:title="View Intro Page"
+            app:summary="View beginning intro page">
+            <intent
+                android:targetPackage="com.fade.sharedclipboard"
+                android:targetClass="com.fade.sharedclipboard.IntroActivity"/>
+        </Preference>
+
+
+        <Preference
             app:key="delete_account_pref"
             app:layout="@layout/delete_account_preference_text"
             app:title="Delete Account" />

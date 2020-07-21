@@ -136,6 +136,7 @@
     <string name="purchase_warning">Purchase Warning</string>
     <string name="prior_purchase">Detected prior purchase on Google Playstore account that has not yet been activated. This is likely due to a purchase being processed by another user. If activated on this account prior account purchase will be cancelled.</string>
     <string name="prior_purchase_positive">Activate, cancel on prior account</string>
+    <string name="copy_text_icon">Copy Text Icon</string>
 
 
 </resources>

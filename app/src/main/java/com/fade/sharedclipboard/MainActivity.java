@@ -41,7 +41,6 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.preference.PreferenceManager;
 
-import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.Purchase;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
@@ -120,13 +119,11 @@ public class MainActivity extends AppCompatActivity {
 	};
 	private ListView navList;
 	private CurrentClip currentClip;
-	private DatabaseReference removeAds;
 	private LinearLayout navLinear;
 	private AdView bannerAd;
 	private boolean purchasedExtra = true;
 	private boolean pendingExtra = false;
 	private String purchaseToken;
-	private BillingClient billingClient;
 
 
 	@Override
@@ -155,241 +152,196 @@ public class MainActivity extends AppCompatActivity {
 
 		if (sharedPreferences.getBoolean(FIRST_LAUNCH, true)) {
 			startActivity(new Intent(MainActivity.this, IntroActivity.class));
-		}
-
-		if (currentUser == null) {
-			startActivity(new Intent(MainActivity.this, LoginActivity.class));
-
-			StartService.killedProg = true;
-			stopService(new Intent(MainActivity.this, ClipboardListenerService.class));
-
 			finish();
 		} else {
 
-			currentClip = new CurrentClip();
-			currentClip.setCurrentClipListener(new CurrentClipListener() {
-				@Override
-				public void onCurrentClipChanged(String currentClip) {
-					editText.setText(currentClip);
+			if (currentUser == null) {
+				startActivity(new Intent(MainActivity.this, LoginActivity.class));
+
+				StartService.killedProg = true;
+				stopService(new Intent(MainActivity.this, ClipboardListenerService.class));
+
+				finish();
+			} else {
+
+				currentClip = new CurrentClip();
+				currentClip.setCurrentClipListener(new CurrentClipListener() {
+					@Override
+					public void onCurrentClipChanged(String currentClip) {
+						editText.setText(currentClip);
+					}
+				});
+
+				//Database Initialization and creation
+				database = this.openOrCreateDatabase(SQL_DATABASE_NAME, MODE_PRIVATE, null);
+				settingsPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+				if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
+					Toast.makeText(this, "External Clipboard Listening Disabled on Android 10.", Toast.LENGTH_SHORT).show();
+					settingsPreferences.edit().putBoolean("copied_notification_pref", false).apply();
 				}
-			});
 
-			//Database Initialization and creation
-			database = this.openOrCreateDatabase(SQL_DATABASE_NAME, MODE_PRIVATE, null);
-			settingsPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+				String packageName = this.getPackageName();
+				PowerManager pm = (PowerManager) this.getSystemService(Context.POWER_SERVICE);
+				assert pm != null;
 
-			if(Build.VERSION.SDK_INT == Build.VERSION_CODES.Q){
-				Toast.makeText(this,"External Clipboard Listening Disabled on Android 10.",Toast.LENGTH_SHORT).show();
-				settingsPreferences.edit().putBoolean("copied_notification_pref",false).apply();
-			}
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+					if (!pm.isIgnoringBatteryOptimizations(packageName) && !sharedPreferences.getBoolean(DONT_SHOW_CHECK, false))
+						Utils.openPowerSettings(getLayoutInflater(), sharedPreferences, this);
+				}
 
-			String packageName = this.getPackageName();
-			PowerManager pm = (PowerManager) this.getSystemService(Context.POWER_SERVICE);
+				//Firebase Database References
+				userEmail = currentUser.getEmail();
+				savedClipRef = FirebaseDatabase.getInstance().getReference().child("users").child(currentUser.getUid()).child("saved clips");
+				deletedClipRef = FirebaseDatabase.getInstance().getReference().child("users").child(currentUser.getUid()).child("deleted clips");
+				DatabaseReference removeAds = FirebaseDatabase.getInstance().getReference().child("users").child(currentUser.getUid()).child("remove ads");
 
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-				if (!pm.isIgnoringBatteryOptimizations(packageName) && !sharedPreferences.getBoolean(DONT_SHOW_CHECK, false))
-					Utils.openPowerSettings(getLayoutInflater(), sharedPreferences, this);
-			}
+				//Clearing of Arrays
+				savedClipTitles.clear();
+				savedClipContents.clear();
+				savedClipID.clear();
+				syncedBoolean.clear();
+				unixTime.clear();
 
-			//Firebase Database References
-			userEmail = currentUser.getEmail();
-			savedClipRef = FirebaseDatabase.getInstance().getReference().child("users").child(currentUser.getUid()).child("saved clips");
-			deletedClipRef = FirebaseDatabase.getInstance().getReference().child("users").child(currentUser.getUid()).child("deleted clips");
-			removeAds = FirebaseDatabase.getInstance().getReference().child("users").child(currentUser.getUid()).child("remove ads");
+				dSavedClipTitles.clear();
+				dSavedClipContents.clear();
+				dSavedClipID.clear();
+				dSyncedBoolean.clear();
+				dUnixTime.clear();
+				dDeleted.clear();
 
-			//Clearing of Arrays
-			savedClipTitles.clear();
-			savedClipContents.clear();
-			savedClipID.clear();
-			syncedBoolean.clear();
-			unixTime.clear();
-
-			dSavedClipTitles.clear();
-			dSavedClipContents.clear();
-			dSavedClipID.clear();
-			dSyncedBoolean.clear();
-			dUnixTime.clear();
-			dDeleted.clear();
-
-			//Creates a List adapter, List views use them to set content
-			savedClipAdapter = new NavListAdapter(this, savedClipTitles, syncedBoolean);
-			savedClipAdapter.notifyDataSetChanged();
+				//Creates a List adapter, List views use them to set content
+				savedClipAdapter = new NavListAdapter(this, savedClipTitles, syncedBoolean);
+				savedClipAdapter.notifyDataSetChanged();
 
 			/*database.execSQL("DROP TABLE IF EXISTS SavedClips");
 			database.execSQL("DROP TABLE IF EXISTS DeletedClips");*/
 
-			//Database Tables
-			database.execSQL("CREATE TABLE IF NOT EXISTS SavedClips (id VARCHAR(36) PRIMARY KEY, ClipTitle VARCHAR, ClipContent VARCHAR, UnixTimeLastSynced INT , Synced INT)");
-			database.execSQL("CREATE TABLE IF NOT EXISTS DeletedClips (id VARCHAR(36) PRIMARY KEY, ClipTitle VARCHAR, ClipContent VARCHAR, UnixTimeLastSynced INT, Synced INT, Deleted INT)");
+				//Database Tables
+				database.execSQL("CREATE TABLE IF NOT EXISTS SavedClips (id VARCHAR(36) PRIMARY KEY, ClipTitle VARCHAR, ClipContent VARCHAR, UnixTimeLastSynced INT , Synced INT)");
+				database.execSQL("CREATE TABLE IF NOT EXISTS DeletedClips (id VARCHAR(36) PRIMARY KEY, ClipTitle VARCHAR, ClipContent VARCHAR, UnixTimeLastSynced INT, Synced INT, Deleted INT)");
 
-			//User Check
-			if (differentUserLoggedIn()) {
+				//User Check
+				if (differentUserLoggedIn()) {
 
-				database.execSQL("DELETE FROM SavedClips");
-				database.execSQL("DELETE FROM DeletedClips");
+					database.execSQL("DELETE FROM SavedClips");
+					database.execSQL("DELETE FROM DeletedClips");
 
-			} else {
+				} else {
 
-				//Populate saved Arrays from SQL
-				try {
-					Cursor c = database.rawQuery("SELECT * FROM SavedClips ORDER BY UnixTimeLastSynced ASC", null);
+					//Populate saved Arrays from SQL
+					try {
+						Cursor c = database.rawQuery("SELECT * FROM SavedClips ORDER BY UnixTimeLastSynced ASC", null);
 
-					int unixTimeIndex = c.getColumnIndex("UnixTimeLastSynced");
-					int syncedIndex = c.getColumnIndex("Synced");
-					int clipIDIndex = c.getColumnIndex("id");
-					int clipTitleIndex = c.getColumnIndex("ClipTitle");
-					int clipContentIndex = c.getColumnIndex("ClipContent");
+						int unixTimeIndex = c.getColumnIndex("UnixTimeLastSynced");
+						int syncedIndex = c.getColumnIndex("Synced");
+						int clipIDIndex = c.getColumnIndex("id");
+						int clipTitleIndex = c.getColumnIndex("ClipTitle");
+						int clipContentIndex = c.getColumnIndex("ClipContent");
 
-					if (c.moveToFirst()) {
-						do {
-							syncedBoolean.add(0, c.getInt(syncedIndex));
-							unixTime.add(0, c.getLong(unixTimeIndex));
-							savedClipID.add(0, c.getString(clipIDIndex));
-							savedClipContents.add(0, c.getString(clipContentIndex));
-							savedClipTitles.add(0, c.getString(clipTitleIndex));
-						} while (c.moveToNext());
-					}
-
-					savedClipAdapter.notifyDataSetChanged();
-					c.close();
-				} catch (Exception e) {
-					e.printStackTrace();
-					Toast.makeText(MainActivity.this, R.string.reading_storage, Toast.LENGTH_LONG).show();
-				}
-
-				//Populate Deleted Arrays from SQL
-				try {
-					Cursor c = database.rawQuery("SELECT * FROM DeletedClips ORDER BY UnixTimeLastSynced ASC", null);
-
-					int unixTimeIndex = c.getColumnIndex("UnixTimeLastSynced");
-					int syncedIndex = c.getColumnIndex("Synced");
-					int clipIDIndex = c.getColumnIndex("id");
-					int clipTitleIndex = c.getColumnIndex("ClipTitle");
-					int clipContentIndex = c.getColumnIndex("ClipContent");
-					int deletedIndex = c.getColumnIndex("Deleted");
-
-					if (c.moveToFirst()) {
-						do {
-							dSyncedBoolean.add(0, c.getInt(syncedIndex));
-							dUnixTime.add(0, c.getLong(unixTimeIndex));
-							dSavedClipID.add(0, c.getString(clipIDIndex));
-							dSavedClipContents.add(0, c.getString(clipContentIndex));
-							dSavedClipTitles.add(0, c.getString(clipTitleIndex));
-							dDeleted.add(0, deletedIndex);
-						} while (c.moveToNext());
-					}
-
-					c.close();
-				} catch (Exception e) {
-					e.printStackTrace();
-					Toast.makeText(MainActivity.this, R.string.reading_storage, Toast.LENGTH_LONG).show();
-				}
-			}
-
-			//Online Database Querying
-			updateFromFirebase();
-
-			//List Creation
-			navList = findViewById(R.id.navListView);
-
-			//Sets adapter
-			navList.setAdapter(savedClipAdapter);
-
-			//MultiSelection
-			navList.setChoiceMode(AbsListView.CHOICE_MODE_MULTIPLE_MODAL);
-			navList.setMultiChoiceModeListener(multiListener);
-
-			//When an Item is clicked run below
-			navList.setOnItemClickListener(
-					new AdapterView.OnItemClickListener() {
-						@Override
-						public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-							//Gets String from Item in position i that was clicked
-							String currentClip = savedClipContents.get(i);
-
-							clipboard.setPrimaryClip(ClipData.newPlainText(currentClip, currentClip));
-							//Creates a toast pop up
-							Toast.makeText(MainActivity.this, R.string.copied, Toast.LENGTH_SHORT).show();
-
+						if (c.moveToFirst()) {
+							do {
+								syncedBoolean.add(0, c.getInt(syncedIndex));
+								unixTime.add(0, c.getLong(unixTimeIndex));
+								savedClipID.add(0, c.getString(clipIDIndex));
+								savedClipContents.add(0, c.getString(clipContentIndex));
+								savedClipTitles.add(0, c.getString(clipTitleIndex));
+							} while (c.moveToNext());
 						}
+
+						savedClipAdapter.notifyDataSetChanged();
+						c.close();
+					} catch (Exception e) {
+						e.printStackTrace();
+						Toast.makeText(MainActivity.this, R.string.reading_storage, Toast.LENGTH_LONG).show();
 					}
-			);
 
-			removeAds.addValueEventListener(new ValueEventListener() {
-				@Override
-				public void onDataChange(@NonNull DataSnapshot snapshot) {
-					if (snapshot.hasChild("state")) {
-						if (Integer.parseInt(snapshot.child("state").getValue().toString()) == Purchase.PurchaseState.PURCHASED) {
-							purchasedExtra = true;
-							navLinear.removeView(bannerAd);
-							Log.d("removeAds", "onDataChange: Purchased");
-						} else if (Integer.parseInt(snapshot.child("state").getValue().toString()) == Purchase.PurchaseState.PENDING) {
-							Log.d("removeAds", "onDataChange: Pending");
+					//Populate Deleted Arrays from SQL
+					try {
+						Cursor c = database.rawQuery("SELECT * FROM DeletedClips ORDER BY UnixTimeLastSynced ASC", null);
 
-							pendingExtra = true;
+						int unixTimeIndex = c.getColumnIndex("UnixTimeLastSynced");
+						int syncedIndex = c.getColumnIndex("Synced");
+						int clipIDIndex = c.getColumnIndex("id");
+						int clipTitleIndex = c.getColumnIndex("ClipTitle");
+						int clipContentIndex = c.getColumnIndex("ClipContent");
+						int deletedIndex = c.getColumnIndex("Deleted");
+
+						if (c.moveToFirst()) {
+							do {
+								dSyncedBoolean.add(0, c.getInt(syncedIndex));
+								dUnixTime.add(0, c.getLong(unixTimeIndex));
+								dSavedClipID.add(0, c.getString(clipIDIndex));
+								dSavedClipContents.add(0, c.getString(clipContentIndex));
+								dSavedClipTitles.add(0, c.getString(clipTitleIndex));
+								dDeleted.add(0, deletedIndex);
+							} while (c.moveToNext());
+						}
+
+						c.close();
+					} catch (Exception e) {
+						e.printStackTrace();
+						Toast.makeText(MainActivity.this, R.string.reading_storage, Toast.LENGTH_LONG).show();
+					}
+				}
+
+				//Online Database Querying
+				updateFromFirebase();
+
+				//List Creation
+				navList = findViewById(R.id.navListView);
+
+				//Sets adapter
+				navList.setAdapter(savedClipAdapter);
+
+				//MultiSelection
+				navList.setChoiceMode(AbsListView.CHOICE_MODE_MULTIPLE_MODAL);
+				navList.setMultiChoiceModeListener(multiListener);
+
+				//When an Item is clicked run below
+				navList.setOnItemClickListener(
+						new AdapterView.OnItemClickListener() {
+							@Override
+							public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+								//Gets String from Item in position i that was clicked
+								String currentClip = savedClipContents.get(i);
+
+								clipboard.setPrimaryClip(ClipData.newPlainText(currentClip, currentClip));
+								//Creates a toast pop up
+								Toast.makeText(MainActivity.this, R.string.copied, Toast.LENGTH_SHORT).show();
+
+							}
+						}
+				);
+
+				removeAds.addValueEventListener(new ValueEventListener() {
+					@Override
+					public void onDataChange(@NonNull DataSnapshot snapshot) {
+						if (snapshot.hasChild("state")) {
+							if (Integer.parseInt(snapshot.child("state").getValue().toString()) == Purchase.PurchaseState.PURCHASED) {
+								purchasedExtra = true;
+								navLinear.removeView(bannerAd);
+								Log.d("removeAds", "onDataChange: Purchased");
+							} else if (Integer.parseInt(snapshot.child("state").getValue().toString()) == Purchase.PurchaseState.PENDING) {
+								Log.d("removeAds", "onDataChange: Pending");
+
+								pendingExtra = true;
+								purchasedExtra = false;
+								purchaseToken = snapshot.child("purchaseToken").getValue().toString();
+
+								try {
+									navLinear.addView(bannerAd);
+									AdRequest adRequest = new AdRequest.Builder().build();
+									bannerAd.loadAd(adRequest);
+									purchasedExtra = false;
+								} catch (Exception e) {
+									e.printStackTrace();
+								}
+							}
+						} else {
 							purchasedExtra = false;
-							purchaseToken = snapshot.child("purchaseToken").getValue().toString();
+							pendingExtra = false;
 
-							/*PurchasesUpdatedListener purchasesUpdatedListener = new PurchasesUpdatedListener() {
-								@Override
-								public void onPurchasesUpdated(@NonNull BillingResult billingResult, List<Purchase> purchases) {
-									if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK
-											&& purchases != null) {
-										for (Purchase purchase : purchases) {
-											utils.handlePurchase(purchase, billingClient, MainActivity.this);
-										}
-									}
-								}
-							};
-
-							billingClient = BillingClient.newBuilder(MainActivity.this)
-									.setListener(purchasesUpdatedListener)
-									.enablePendingPurchases()
-									.build();
-
-							//Starting connection to Googleplay
-							billingClient.startConnection(new BillingClientStateListener() {
-								@Override
-								public void onBillingSetupFinished(@NonNull BillingResult billingResult) {
-									if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK) {
-										boolean consumed = false;
-
-										List<Purchase> purchasesList = billingClient.queryPurchases(BillingClient.SkuType.INAPP).getPurchasesList();
-
-										//Check for pending purchase or different user
-										if (purchasesList != null && !purchasesList.isEmpty()) {
-											for (final Purchase item : purchasesList) {
-												if (!item.isAcknowledged()) {
-													Log.d("UNCONSUMED", "UNCONSUMED, PurchaseState: " + item.getPurchaseState());
-
-													consumed = false;
-													if (item.getPurchaseState() == Purchase.PurchaseState.PURCHASED && item.getPurchaseToken().equals(purchaseToken)) {
-														utils.handlePurchase(item, billingClient, MainActivity.this);
-													}
-													//Because single item
-													break;
-												} else {
-													Log.d("CONSUMED", "CONSUMED ");
-													consumed = true;
-
-												}
-											}
-										} else {
-											Log.d("CONSUMED", "CONSUMED ");
-											consumed = true;
-										}
-
-										if (consumed) {
-											removeAds.removeValue();
-										}
-									}
-								}
-
-								@Override
-								public void onBillingServiceDisconnected() {
-
-								}
-							});*/
 							try {
 								navLinear.addView(bannerAd);
 								AdRequest adRequest = new AdRequest.Builder().build();
@@ -399,30 +351,18 @@ public class MainActivity extends AppCompatActivity {
 								e.printStackTrace();
 							}
 						}
-					} else {
-						purchasedExtra = false;
-						pendingExtra = false;
-
-						try {
-							navLinear.addView(bannerAd);
-							AdRequest adRequest = new AdRequest.Builder().build();
-							bannerAd.loadAd(adRequest);
-							purchasedExtra = false;
-						} catch (Exception e) {
-							e.printStackTrace();
-						}
 					}
-				}
 
-				@Override
-				public void onCancelled(@NonNull DatabaseError error) {
+					@Override
+					public void onCancelled(@NonNull DatabaseError error) {
 
-				}
+					}
 
-			});
+				});
 
-			//Put current user in shared preference
-			sharedPreferences.edit().putString(LAST_UUID, currentUser.getUid()).apply();
+				//Put current user in shared preference
+				sharedPreferences.edit().putString(LAST_UUID, currentUser.getUid()).apply();
+			}
 		}
 	}
 
@@ -550,15 +490,15 @@ public class MainActivity extends AppCompatActivity {
 				database.compileStatement("UPDATE SavedClips SET UnixTimeLastSynced = ?, Synced = 1 WHERE Synced = 0");
 		Log.d("SYNCED", "SYNCED");
 
-		final ArrayList<String> onlineClipIDs = new ArrayList<>();
+//		final ArrayList<String> onlineClipIDs = new ArrayList<>();
 
 		savedClipRef.addListenerForSingleValueEvent(new ValueEventListener() {
 			@Override
 			public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
-				for (DataSnapshot savedClip : dataSnapshot.getChildren()) {
+				/*for (DataSnapshot savedClip : dataSnapshot.getChildren()) {
 					onlineClipIDs.add(savedClip.getKey());
-				}
+				}*/
 
 				while (MainActivity.unixTime.contains((long) 0)) {
 
@@ -1043,6 +983,20 @@ public class MainActivity extends AppCompatActivity {
 		return super.dispatchTouchEvent(ev);
 	}
 
+	public void copyClicked(View view) {
+		//Gets String from Item in position i that was clicked
+		String text = editText.getText().toString();
+
+		if (!text.isEmpty()) {
+			clipboard.setPrimaryClip(ClipData.newPlainText(text, text));
+			//Creates a toast pop up
+			Toast.makeText(MainActivity.this, R.string.copied, Toast.LENGTH_SHORT).show();
+		} else {
+			Toast.makeText(MainActivity.this, R.string.empty_editbox, Toast.LENGTH_SHORT).show();
+		}
+
+	}
+
 	public void shareClicked(View view) {
 		if (!editText.getText().toString().isEmpty()) {
 			final Button btn = (Button) view;
@@ -1318,6 +1272,8 @@ public class MainActivity extends AppCompatActivity {
 			}
 		}
 	}
+
+
 }
 
 
