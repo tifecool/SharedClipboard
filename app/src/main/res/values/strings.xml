@@ -24,7 +24,7 @@
 
     <!-- Extensions Preferences -->
     <string name="extensions_title">Extensions (Link Google Account)</string>
-    <string name="chrome_ext_pref_summary">Link to Chrome Extension</string>
+    <string name="chrome_ext_pref_summary">Link to Chrome Extension\n(One-click install if logged in on Chrome)</string>
     <string name="chrome_ext_pref">Chrome Extension</string>
     <string name="edge_ext_pref_summary">Link to Edge Extension</string>
     <string name="edge_ext_pref">Edge Extension</string>
@@ -37,6 +37,10 @@
     <string name="always_running_pref_sum">Listen for copied text</string>
     <string name="battery_optimization_pref">Battery Optimization</string>
     <string name="battery_optimization_pref_sum">Enable for more stable app performance</string>
+    <string name="system_dark_mode">System Dark Mode</string>
+    <string name="system_dark_mode_sum">Match system dark mode settings</string>
+    <string name="dark_mode">Toggle Dark Mode</string>
+    <string name="dark_mode_sum">Turn dark mode On/Off</string>
 
     <!-- Deletion Preferences -->
     <string name="thrash_pref">Thrash</string>
@@ -120,8 +124,8 @@
     <string name="incorrect_email">Incorrect Email</string>
     <string name="first_page_text">The easiest way to share links and texts between devices!</string>
     <string name="second_page_text">Notified on new copied text, and text from other devices.</string>
-    <string name="third_page_text">Save important text and links for later.\nSynced between devices.</string>
-    <string name="fourth_page_text">Easy to use Chrome Extension!\n(Link in settings)</string>
+    <string name="third_page_text">Save important text and links for later.\nSynced between devices!</string>
+    <string name="fourth_page_text">Easy to use Extensions!\n(Link in settings) (Required)</string>
     <string name="get_started">Proceed</string>
     <string name="empty" />
     <string name="welcome_to">Welcome to</string>
@@ -139,6 +143,8 @@
     <string name="copy_text_icon">Copy Text Icon</string>
     <string name="intro_pref_title">View Intro Page</string>
     <string name="intro_pref_sum">View beginning intro page</string>
+    <string name="enable_dark_mode">Toggle Dark mode</string>
+
 
 
 </resources>

@@ -1,18 +1,24 @@
 package com.fade.sharedclipboard;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
+import androidx.preference.PreferenceManager;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -45,6 +51,7 @@ public class LoginActivity extends AppCompatActivity {
 	private EditText passwordText;
 	private Button signInButton;
 	private Button signUpButton;
+	boolean programmaticSwitch = false;
 	private SignInButton googleButton;
 	private EditText confPass;
 
@@ -140,6 +147,8 @@ public class LoginActivity extends AppCompatActivity {
 
 		}
 	};
+	private SharedPreferences settingsPreferences;
+	private Switch switchButton;
 
 
 	@Override
@@ -155,6 +164,7 @@ public class LoginActivity extends AppCompatActivity {
 		emailReqText = findViewById(R.id.emailReqText);
 		dividerPass = findViewById(R.id.dividerPass);
 		passReqText = findViewById(R.id.passReqText);
+		switchButton = findViewById(R.id.switch1);
 
 		mAuth = FirebaseAuth.getInstance();
 		emailText = findViewById(R.id.emailText);
@@ -168,6 +178,7 @@ public class LoginActivity extends AppCompatActivity {
 		intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
 
 		signInButton.setOnClickListener(signInClick);
+
 
 		//SignInWithGoogle
 		GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -203,7 +214,12 @@ public class LoginActivity extends AppCompatActivity {
 			@Override
 			public void onClick(View view) {
 				InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-				inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+				View focusedView = getCurrentFocus();
+
+				if (focusedView != null) {
+					assert inputMethodManager != null;
+					inputMethodManager.hideSoftInputFromWindow(focusedView.getWindowToken(), 0);
+				}
 			}
 		});
 
@@ -215,7 +231,12 @@ public class LoginActivity extends AppCompatActivity {
 
 				if (keyEvent.getAction() == KeyEvent.ACTION_DOWN && i == KeyEvent.KEYCODE_ENTER && signupClickInt == 0) {
 					InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-					inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+					View focusedView = getCurrentFocus();
+
+					if (focusedView != null) {
+						assert inputMethodManager != null;
+						inputMethodManager.hideSoftInputFromWindow(focusedView.getWindowToken(), 0);
+					}
 					signInClick.onClick(signInButton);
 				}
 				return false;
@@ -228,14 +249,45 @@ public class LoginActivity extends AppCompatActivity {
 			public boolean onKey(View view, int i, KeyEvent keyEvent) {
 				if (keyEvent.getAction() == KeyEvent.ACTION_DOWN && i == KeyEvent.KEYCODE_ENTER && signupClickInt == 1) {
 					InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-					inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+					View focusedView = getCurrentFocus();
+
+					if (focusedView != null) {
+						assert inputMethodManager != null;
+						inputMethodManager.hideSoftInputFromWindow(focusedView.getWindowToken(), 0);
+					}
 					signUpClicked(null);
 				}
 				return false;
 			}
 		});
 
+		settingsPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+			switchButton.setVisibility(View.GONE);
+		}else{
+			switchButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+				@Override
+				public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+					if (!programmaticSwitch) {
+						Log.d("TAG", "onCheckedChanged: SWITCHED ");
+						if (b) {
+							AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+						} else {
+							AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+						}
+						settingsPreferences.edit().putBoolean("dark_mode", b).apply();
+					} else {
+						programmaticSwitch = false;
+					}
+
+				}
+			});
+		}
+
+
 	}
+
 
 
 	@Override
@@ -400,7 +452,7 @@ public class LoginActivity extends AppCompatActivity {
 							Toast.makeText(LoginActivity.this, R.string.login_failed, Toast.LENGTH_SHORT).show();
 							Log.w("Failed", "signInWithCredential:failure", task.getException());
 
-							if(mGoogleSignInClient != null){
+							if (mGoogleSignInClient != null) {
 								mGoogleSignInClient.signOut();
 							}
 						}

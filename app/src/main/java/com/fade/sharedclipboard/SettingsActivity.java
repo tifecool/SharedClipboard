@@ -28,6 +28,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceCategory;
 import androidx.preference.PreferenceFragmentCompat;
@@ -136,6 +137,16 @@ public class SettingsActivity extends AppCompatActivity {
 		}
 	}
 
+	@Override
+	public void onBackPressed() {
+		if(Build.VERSION.SDK_INT < Build.VERSION_CODES.P){
+			startActivity(new Intent(this, MainActivity.class));
+			finish();
+		}else {
+			super.onBackPressed();
+		}
+	}
+
 	public void backClicked(View view) {
 		onBackPressed();
 	}
@@ -153,8 +164,8 @@ public class SettingsActivity extends AppCompatActivity {
 		public void onResume() {
 			super.onResume();
 
-			if(!fromMainActivity.getBooleanExtra(PURCHASE_TOKEN_EXTRA,true)){
-				pending = fromMainActivity.getBooleanExtra(PENDING_EXTRA,false);
+			if (!fromMainActivity.getBooleanExtra(PURCHASE_TOKEN_EXTRA, true)) {
+				pending = fromMainActivity.getBooleanExtra(PENDING_EXTRA, false);
 				purchaseToken = fromMainActivity.getStringExtra(PURCHASE_TOKEN_EXTRA);
 			}
 		}
@@ -166,10 +177,9 @@ public class SettingsActivity extends AppCompatActivity {
 			setPreferencesFromResource(R.xml.root_preferences, rootKey);
 
 
-			if(Build.VERSION.SDK_INT == Build.VERSION_CODES.Q){
+			if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
 				findPreference("copied_notification_pref").setVisible(false);
 			}
-
 
 
 			if (!fromMainActivity.getBooleanExtra(PURCHASED_EXTRA, true)) {
@@ -208,7 +218,7 @@ public class SettingsActivity extends AppCompatActivity {
 						if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK
 								&& purchases != null) {
 							for (Purchase purchase : purchases) {
-								if(purchase.getPurchaseToken().equals(purchaseToken) || launched) {
+								if (purchase.getPurchaseToken().equals(purchaseToken) || launched) {
 									pending = !utils.handlePurchase(purchase, billingClient, getContext());
 									purchaseToken = null;
 									launched = false;
@@ -680,6 +690,25 @@ public class SettingsActivity extends AppCompatActivity {
 				}
 
 
+			});
+
+			final SwitchPreference darkModePref = findPreference("dark_mode");
+			assert darkModePref != null;
+
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+				darkModePref.setVisible(false);
+			}
+
+			darkModePref.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+				@Override
+				public boolean onPreferenceChange(Preference preference, Object newValue) {
+					if((boolean)newValue){
+						AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+					}else{
+						AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+					}
+					return true;
+				}
 			});
 
 

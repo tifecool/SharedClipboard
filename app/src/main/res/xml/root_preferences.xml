@@ -16,6 +16,16 @@
             app:summary="@string/always_running_pref_sum"
             app:title="@string/always_running_pref" />
 
+        <SwitchPreference
+            android:enabled="true"
+            app:title="@string/dark_mode"
+            app:key="dark_mode"
+            app:summary="@string/dark_mode_sum"
+            app:icon="@drawable/ic_moon"/>
+
+
+
+
         <Preference
             app:icon="@drawable/warning_bright"
             app:isPreferenceVisible="false"

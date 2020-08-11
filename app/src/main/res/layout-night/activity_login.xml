@@ -11,7 +11,7 @@
         android:id="@+id/signIn"
         android:layout_width="153dp"
         android:layout_height="48dp"
-        android:background="@android:drawable/editbox_background"
+        android:background="@android:drawable/editbox_dropdown_dark_frame"
         android:text="@string/sign_in"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/guideline"
@@ -24,7 +24,7 @@
         android:id="@+id/signUp"
         android:layout_width="153dp"
         android:layout_height="48dp"
-        android:background="@android:drawable/editbox_background"
+        android:background="@android:drawable/editbox_dropdown_dark_frame"
         android:onClick="signUpClicked"
         android:text="@string/sign_up"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -189,6 +189,7 @@
 
     <Switch
         android:id="@+id/switch1"
+        android:checked="true"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/enable_dark_mode"
@@ -197,6 +198,5 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintVertical_bias="0.77"
         app:layout_constraintTop_toBottomOf="@+id/googleButton" />
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>

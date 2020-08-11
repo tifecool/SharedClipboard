@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
@@ -366,6 +367,24 @@ public class MainActivity extends AppCompatActivity {
 		}
 	}
 
+	@Override
+	public void onConfigurationChanged(@NonNull Configuration newConfig) {
+		super.onConfigurationChanged(newConfig);
+
+		int nightModeFlags = newConfig.uiMode &
+				Configuration.UI_MODE_NIGHT_MASK;
+
+		switch (nightModeFlags) {
+			case Configuration.UI_MODE_NIGHT_YES:
+
+			case Configuration.UI_MODE_NIGHT_UNDEFINED:
+
+			case Configuration.UI_MODE_NIGHT_NO:
+				this.recreate();
+				break;
+
+		}
+	}
 
 	@Override
 	protected void onResume() {
@@ -496,26 +515,9 @@ public class MainActivity extends AppCompatActivity {
 			@Override
 			public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
-				/*for (DataSnapshot savedClip : dataSnapshot.getChildren()) {
-					onlineClipIDs.add(savedClip.getKey());
-				}*/
-
 				while (MainActivity.unixTime.contains((long) 0)) {
 
 					int i = MainActivity.unixTime.indexOf((long) 0);
-
-					/*if (onlineClipIDs.contains(savedClipID.get(i))) {
-						String id = UUID.randomUUID().toString();
-
-						SQLiteStatement updateStatement =
-								database.compileStatement("UPDATE SavedClips SET id = ? WHERE id = ?");
-
-						updateStatement.bindString(1, id);
-						updateStatement.bindString(2, savedClipID.get(i));
-						updateStatement.execute();
-						savedClipID.remove(i);
-						savedClipID.add(i, id);
-					}*/
 
 
 					MainActivity.unixTime.add(i, unixTime);
@@ -564,21 +566,6 @@ public class MainActivity extends AppCompatActivity {
 
 				while (dUnixTime.contains((long) 0)) {
 					final int i = dUnixTime.indexOf((long) 0);
-
-/*
-					if (dOnlineClipIDs.contains(dSavedClipID.get(i))) {
-						String id = UUID.randomUUID().toString();
-
-						SQLiteStatement updateStatement =
-								database.compileStatement("UPDATE DeletedClips SET id = ? WHERE id = ?");
-
-						updateStatement.bindString(1, id);
-						updateStatement.bindString(2, dSavedClipID.get(i));
-						updateStatement.execute();
-						dSavedClipID.remove(i);
-						dSavedClipID.add(i, id);
-					}
-*/
 
 					dUnixTime.add(i, unixTime);
 					dUnixTime.remove(i + 1);
@@ -962,6 +949,9 @@ public class MainActivity extends AppCompatActivity {
 		intent.putExtra(PENDING_EXTRA, pendingExtra);
 		intent.putExtra(PURCHASE_TOKEN_EXTRA, purchaseToken);
 		startActivity(intent);
+		if(Build.VERSION.SDK_INT < Build.VERSION_CODES.P){
+			finish();
+		}
 	}
 
 	//VERY USEFUL CODE FOR REMOVING FOCUS ON EDITTEXT
@@ -976,6 +966,7 @@ public class MainActivity extends AppCompatActivity {
 					Log.d("focus", "touchevent");
 					v.clearFocus();
 					InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+					assert imm != null;
 					imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
 				}
 			}
